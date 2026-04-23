@@ -191,6 +191,10 @@ function renderFooter() {
   `;
 }
 
+const CHAT_EMOJIS = ['😊','😂','❤️','👍','🙏','😢','💪','🤔','✅','⭐','🎉','👋','💚','🙌','😍','🥰','😘','🤝','💯','🔥'];
+let _chatPendingFileUrl = null;
+let _chatBadgeInterval = null;
+
 function renderWidgets() {
   if (document.querySelector('.wa-float')) return;
   const s = appSettings;
@@ -205,13 +209,15 @@ function renderWidgets() {
   const chat = document.createElement('button');
   chat.className = 'chat-float';
   chat.setAttribute('aria-label', 'Canlı destek');
-  chat.innerHTML = svgIcon('chat');
+  chat.style.position = 'relative';
+  chat.innerHTML = svgIcon('chat') + '<span class="chat-unread-badge" id="chat-unread-badge"></span>';
   chat.addEventListener('click', () => {
     document.getElementById('chat-window').classList.toggle('open');
     loadChatThread();
   });
   document.body.appendChild(chat);
 
+  const fileAccept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip';
   const chatBox = document.createElement('div');
   chatBox.className = 'chat-window';
   chatBox.id = 'chat-window';
@@ -227,12 +233,27 @@ function renderWidgets() {
       <div class="chat-msg admin">Merhaba! Hayır Limanı Derneği canlı destek hattına hoş geldiniz. Mesajınızı yazın, en kısa sürede dönüş yapalım.</div>
     </div>
     <a class="chat-wa-btn" href="https://wa.me/${s.whatsapp || '905530232173'}" target="_blank">WhatsApp'tan İletişime Geç</a>
+    <div id="chat-emoji-panel" class="chat-emoji-panel" style="display:none">
+      ${CHAT_EMOJIS.map(em => `<button type="button" onclick="chatInsertEmoji('${em}')">${em}</button>`).join('')}
+    </div>
+    <div id="chat-attach-bar" class="chat-attach-bar" style="display:none">
+      <span id="chat-attach-name"></span>
+      <button type="button" onclick="clearChatAttach()" title="Kaldır">✕</button>
+    </div>
     <form class="chat-input" onsubmit="sendChat(event)">
-      <input type="text" id="chat-text" placeholder="Mesajınız..." required />
-      <button type="submit">Gönder</button>
+      <div class="chat-input-row">
+        <button type="button" class="chat-emoji-toggle" onclick="toggleChatEmoji()" title="Emoji">😊</button>
+        <label class="chat-file-btn" title="Dosya ekle" style="display:inline-flex;align-items:center;cursor:pointer">
+          📎<input type="file" id="chat-file-input" style="display:none" accept="${fileAccept}" onchange="onChatFileSelect(this)" />
+        </label>
+        <input type="text" id="chat-text" placeholder="Mesajınız…" style="flex:1" />
+        <button type="submit" style="flex-shrink:0">Gönder</button>
+      </div>
     </form>
   `;
   document.body.appendChild(chatBox);
+
+  if (currentUser) startBadgePolling();
 }
 
 async function loadChatThread() {
@@ -240,21 +261,29 @@ async function loadChatThread() {
   if (!body) return;
   const rows = await api('/api/messages/thread');
   if (!Array.isArray(rows) || rows.length === 0) return;
-  body.innerHTML = rows.map(m => `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${escapeHtml(m.body)}</div>`).join('');
+  body.innerHTML = rows.map(m =>
+    `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${renderMsgContent(m)}<div style="font-size:.65rem;opacity:.6;margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`
+  ).join('');
   body.scrollTop = body.scrollHeight;
+  const badge = document.getElementById('chat-unread-badge');
+  if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
 }
 
 async function sendChat(e) {
   e.preventDefault();
   const input = document.getElementById('chat-text');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text && !_chatPendingFileUrl) return;
   const body = document.getElementById('chat-body');
-  body.insertAdjacentHTML('beforeend', `<div class="chat-msg user">${escapeHtml(text)}</div>`);
+  body.insertAdjacentHTML('beforeend',
+    `<div class="chat-msg user">${renderMsgContent({ body: text, file_url: _chatPendingFileUrl })}<div style="font-size:.65rem;opacity:.6;margin-top:4px">${new Date().toLocaleString('tr-TR')}</div></div>`
+  );
   body.scrollTop = body.scrollHeight;
+  const fileUrl = _chatPendingFileUrl;
   input.value = '';
+  clearChatAttach();
 
-  let payload = { body: text };
+  const payload = { body: text, file_url: fileUrl };
   if (!currentUser) {
     let name = sessionStorage.getItem('chat_name');
     let email = sessionStorage.getItem('chat_email');
@@ -263,10 +292,77 @@ async function sendChat(e) {
     payload.name = name; payload.email = email;
   }
   await api('/api/messages', { method: 'POST', body: payload });
-  setTimeout(() => {
-    body.insertAdjacentHTML('beforeend', `<div class="chat-msg admin">Mesajınız alındı. Yöneticilerimiz en kısa sürede dönüş sağlayacaktır.</div>`);
-    body.scrollTop = body.scrollHeight;
-  }, 500);
+  if (!currentUser) {
+    setTimeout(() => {
+      body.insertAdjacentHTML('beforeend', `<div class="chat-msg admin">Mesajınız alındı. Yöneticilerimiz en kısa sürede dönüş sağlayacaktır.</div>`);
+      body.scrollTop = body.scrollHeight;
+    }, 500);
+  }
+}
+
+function toggleChatEmoji() {
+  const p = document.getElementById('chat-emoji-panel');
+  if (!p) return;
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+function chatInsertEmoji(em) {
+  const inp = document.getElementById('chat-text');
+  if (!inp) return;
+  const p = inp.selectionStart ?? inp.value.length;
+  inp.value = inp.value.slice(0, p) + em + inp.value.slice(p);
+  inp.focus();
+  inp.selectionStart = inp.selectionEnd = p + em.length;
+  document.getElementById('chat-emoji-panel').classList.remove('open');
+}
+function onChatFileSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('chat-attach-name').textContent = file.name;
+  const bar = document.getElementById('chat-attach-bar');
+  if (bar) bar.style.display = 'flex';
+  uploadChatFile(file);
+}
+function clearChatAttach() {
+  _chatPendingFileUrl = null;
+  const bar = document.getElementById('chat-attach-bar');
+  if (bar) bar.style.display = 'none';
+  const fi = document.getElementById('chat-file-input');
+  if (fi) fi.value = '';
+}
+async function uploadChatFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await r.json();
+    _chatPendingFileUrl = data.url || null;
+  } catch { clearChatAttach(); alert('Dosya yüklenemedi.'); }
+}
+function renderMsgContent(m) {
+  let html = m.body ? escapeHtml(m.body) : '';
+  if (m.file_url) {
+    const ext = (m.file_url.split('.').pop() || '').toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+      html += `<br><img src="${escapeHtml(m.file_url)}" class="chat-msg-img" alt="görsel">`;
+    } else {
+      html += `<br><a href="${escapeHtml(m.file_url)}" class="chat-msg-file" target="_blank" rel="noopener">📎 ${escapeHtml(m.file_url.split('/').pop())}</a>`;
+    }
+  }
+  return html;
+}
+function startBadgePolling() {
+  if (_chatBadgeInterval) return;
+  const check = async () => {
+    try {
+      const r = await api('/api/messages/unread-count');
+      const badge = document.getElementById('chat-unread-badge');
+      if (!badge) return;
+      if (r.count > 0) { badge.textContent = r.count; badge.style.display = 'flex'; }
+      else badge.style.display = 'none';
+    } catch {}
+  };
+  check();
+  _chatBadgeInterval = setInterval(check, 15000);
 }
 
 async function subscribeNewsletter(e) {

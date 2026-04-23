@@ -9,7 +9,15 @@
       "Bash(rm -rf uploads docx_extracted)",
       "Bash(node -e ' *)",
       "Bash(node -e \"require\\('./database'\\); console.log\\('DB OK'\\)\")",
-      "Bash(node -c server.js)"
+      "Bash(node -c server.js)",
+      "Bash(node -e \"require\\('./database'\\); require\\('./server'\\)\")",
+      "Bash(node --check server.js)",
+      "Bash(node --check database.js)",
+      "Bash(node --check public/js/main.js)",
+      "Bash(node --check public/js/admin.js)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 2876)"
     ]
   }
 }

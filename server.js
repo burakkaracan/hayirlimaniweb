@@ -177,30 +177,40 @@ app.get('/api/my-donations', requireAuth, (req, res) => {
 });
 
 // ---------- Messages (live chat) ----------
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Dosya yok' });
+  res.json({ url: `/uploads/${req.file.filename}`, name: req.file.originalname });
+});
+
 app.post('/api/messages', (req, res) => {
-  const { body, name, email } = req.body || {};
-  if (!body) return res.status(400).json({ error: 'Mesaj boş olamaz' });
+  const { body, name, email, file_url } = req.body || {};
+  if (!body && !file_url) return res.status(400).json({ error: 'Mesaj boş olamaz' });
   const userId = req.session.userId || null;
   let n = name, e = email;
   if (userId) {
     const u = db.prepare('SELECT name,email FROM users WHERE id=?').get(userId);
     n = u.name; e = u.email;
   }
-  const info = db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body) VALUES(?,?,?,?,?)')
-    .run(userId, n || 'Misafir', e || '', 0, body);
+  const info = db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body,file_url) VALUES(?,?,?,?,?,?)')
+    .run(userId, n || 'Misafir', e || '', 0, body || '', file_url || null);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
 app.get('/api/messages/thread', (req, res) => {
-  // Returns conversation for session user (or by email/name stored in session.chat)
   if (req.session.userId) {
     const rows = db.prepare('SELECT * FROM messages WHERE user_id=? ORDER BY created_at').all(req.session.userId);
+    db.prepare('UPDATE messages SET donor_read=1 WHERE user_id=? AND from_admin=1').run(req.session.userId);
     return res.json(rows);
   }
   const key = req.session.chatKey;
   if (!key) return res.json([]);
   const rows = db.prepare('SELECT * FROM messages WHERE email=? ORDER BY created_at').all(key);
   res.json(rows);
+});
+
+app.get('/api/messages/unread-count', requireAuth, (req, res) => {
+  const count = db.prepare('SELECT COUNT(*) as c FROM messages WHERE user_id=? AND from_admin=1 AND donor_read=0').get(req.session.userId);
+  res.json({ count: count.c });
 });
 
 // ---------- Admin ----------
@@ -448,9 +458,9 @@ app.get('/api/admin/messages/:key', requireAdmin, (req, res) => {
   res.json(rows);
 });
 app.post('/api/admin/messages/reply', requireAdmin, (req, res) => {
-  const { user_id, email, name, body } = req.body;
-  db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body,read) VALUES(?,?,?,?,?,1)')
-    .run(user_id || null, name || '', email || '', 1, body);
+  const { user_id, email, name, body, file_url } = req.body;
+  db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body,file_url,read) VALUES(?,?,?,?,?,?,1)')
+    .run(user_id || null, name || '', email || '', 1, body || '', file_url || null);
   res.json({ ok: true });
 });
 

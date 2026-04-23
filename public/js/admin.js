@@ -1,6 +1,11 @@
 // ===== Admin Panel Script =====
 let adminState = { section: 'dashboard', data: {} };
 
+const ADMIN_EMOJIS = ['😊','😂','❤️','👍','🙏','😢','💪','🤔','✅','⭐','🎉','👋','💚','🙌','😍','🥰','😘','🤝','💯','🔥'];
+let _adminBadgeInterval = null;
+let _adminAttachFileUrl = null;
+let _currentThread = null;
+
 window.addEventListener('app-ready', async () => {
   if (!currentUser) { location.href = '/giris.html'; return; }
   if (currentUser.role !== 'admin' && currentUser.role !== 'staff') {
@@ -11,6 +16,7 @@ window.addEventListener('app-ready', async () => {
   const hash = location.hash.replace('#', '') || 'dashboard';
   switchSection(hash);
   window.addEventListener('hashchange', () => switchSection(location.hash.replace('#', '') || 'dashboard'));
+  startAdminPolling();
 });
 
 function renderShell() {
@@ -24,7 +30,7 @@ function renderShell() {
           <a href="#dashboard" data-s="dashboard">📊 Panel</a>
           <a href="#donations" data-s="donations">💚 Bağış Onayları</a>
           <a href="#users" data-s="users">👥 Bağışçılar</a>
-          <a href="#messages" data-s="messages">💬 Mesajlar</a>
+          <a href="#messages" data-s="messages">💬 Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
           <a href="#categories" data-s="categories">🏷️ Bağış Kategorileri</a>
           <a href="#campaigns" data-s="campaigns">📣 Kampanyalar</a>
           <a href="#activities" data-s="activities">🌍 Faaliyetler</a>
@@ -567,23 +573,109 @@ async function updateTags(id, tags) {
 
 // Messages
 async function openThread(key, name, email, userId) {
+  _currentThread = { key, userId, email, name };
+  _adminAttachFileUrl = null;
   const rows = await api('/api/admin/messages/' + encodeURIComponent(key));
+  const fileAccept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip';
   document.getElementById('thread-panel').innerHTML = `
     <h3>${escapeHtml(name)} ${email ? `<small class="muted">· ${escapeHtml(email)}</small>` : ''}</h3>
-    <div class="chat-thread">
-      ${rows.map(m => `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${escapeHtml(m.body)}<div style="font-size:.65rem; opacity:.6; margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`).join('')}
+    <div class="chat-thread" id="admin-chat-thread">
+      ${rows.map(m => `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${renderAdminMsgContent(m)}<div style="font-size:.65rem;opacity:.6;margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`).join('')}
     </div>
-    <form onsubmit="reply(event, ${userId || 'null'}, '${escapeHtml(email)}', '${escapeHtml(name)}')">
-      <div class="form-group"><textarea name="body" rows="3" placeholder="Yanıtınız..." required></textarea></div>
-      <button class="btn btn-primary" type="submit">Yanıt Gönder</button>
+    <div id="admin-emoji-panel" class="chat-emoji-panel" style="display:none;border-top:1px solid var(--border)">
+      ${ADMIN_EMOJIS.map(em => `<button type="button" onclick="adminInsertEmoji('${em}')">${em}</button>`).join('')}
+    </div>
+    <div id="admin-attach-bar" class="chat-attach-bar" style="display:none">
+      <span id="admin-attach-name"></span>
+      <button type="button" onclick="clearAdminAttach()" title="Kaldır">✕</button>
+    </div>
+    <form onsubmit="reply(event)" style="margin-top:8px">
+      <div class="form-group" style="margin-bottom:6px">
+        <textarea id="admin-reply-body" rows="3" placeholder="Yanıtınız…" style="width:100%"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="chat-emoji-toggle" onclick="toggleAdminEmoji()" title="Emoji" style="font-size:1.2rem;background:none;border:none;cursor:pointer">😊</button>
+        <label style="cursor:pointer;font-size:1.1rem" title="Dosya ekle">📎<input type="file" accept="${fileAccept}" style="display:none" onchange="onAdminFileSelect(this)"></label>
+        <button class="btn btn-primary" type="submit" style="margin-left:auto">Yanıt Gönder</button>
+      </div>
     </form>
   `;
+  const thread = document.getElementById('admin-chat-thread');
+  if (thread) thread.scrollTop = thread.scrollHeight;
 }
-async function reply(e, userId, email, name) {
+
+async function reply(e) {
   e.preventDefault();
-  const body = e.target.body.value;
-  await api('/api/admin/messages/reply', { method: 'POST', body: { user_id: userId, email, name, body } });
-  sections.messages();
+  if (!_currentThread) return;
+  const bodyText = document.getElementById('admin-reply-body').value.trim();
+  if (!bodyText && !_adminAttachFileUrl) return;
+  const { userId, email, name } = _currentThread;
+  await api('/api/admin/messages/reply', { method: 'POST', body: { user_id: userId, email, name, body: bodyText, file_url: _adminAttachFileUrl } });
+  clearAdminAttach();
+  await openThread(_currentThread.key, _currentThread.name, _currentThread.email, _currentThread.userId);
+}
+
+function toggleAdminEmoji() {
+  const p = document.getElementById('admin-emoji-panel');
+  if (!p) return;
+  p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+}
+function adminInsertEmoji(em) {
+  const ta = document.getElementById('admin-reply-body');
+  if (!ta) return;
+  const p = ta.selectionStart ?? ta.value.length;
+  ta.value = ta.value.slice(0, p) + em + ta.value.slice(p);
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = p + em.length;
+  document.getElementById('admin-emoji-panel')?.classList.remove('open');
+}
+function onAdminFileSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('admin-attach-name').textContent = file.name;
+  const bar = document.getElementById('admin-attach-bar');
+  if (bar) bar.style.display = 'flex';
+  uploadAdminFile(file);
+}
+function clearAdminAttach() {
+  _adminAttachFileUrl = null;
+  const bar = document.getElementById('admin-attach-bar');
+  if (bar) bar.style.display = 'none';
+}
+async function uploadAdminFile(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  try {
+    const r = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+    const data = await r.json();
+    _adminAttachFileUrl = data.url || null;
+  } catch { clearAdminAttach(); alert('Dosya yüklenemedi.'); }
+}
+function renderAdminMsgContent(m) {
+  let html = m.body ? escapeHtml(m.body) : '';
+  if (m.file_url) {
+    const ext = (m.file_url.split('.').pop() || '').toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+      html += `<br><img src="${escapeHtml(m.file_url)}" class="chat-msg-img" alt="görsel">`;
+    } else {
+      html += `<br><a href="${escapeHtml(m.file_url)}" class="chat-msg-file" target="_blank" rel="noopener">📎 ${escapeHtml(m.file_url.split('/').pop())}</a>`;
+    }
+  }
+  return html;
+}
+function startAdminPolling() {
+  if (_adminBadgeInterval) return;
+  const check = async () => {
+    try {
+      const stats = await api('/api/admin/stats');
+      const badge = document.getElementById('admin-msg-badge');
+      if (!badge) return;
+      if (stats.newMessages > 0) { badge.textContent = stats.newMessages; badge.style.display = 'inline-flex'; }
+      else badge.style.display = 'none';
+    } catch {}
+  };
+  check();
+  _adminBadgeInterval = setInterval(check, 15000);
 }
 
 // Documents
