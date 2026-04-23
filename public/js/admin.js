@@ -78,7 +78,7 @@ const sections = {
               ${recent.slice(0, 10).map(d => `
                 <tr>
                   <td>${new Date(d.created_at).toLocaleString('tr-TR')}</td>
-                  <td><strong>${d.user_name}</strong><div class="muted" style="font-size:.8rem">${d.user_email}</div></td>
+                  <td><strong>${escapeHtml(d.user_name)}</strong><div class="muted" style="font-size:.8rem">${escapeHtml(d.user_email)}</div></td>
                   <td><strong>${formatTL(d.amount)}</strong></td>
                   <td>${d.category_title || d.campaign_title || 'Genel'}</td>
                   <td>
@@ -97,10 +97,10 @@ const sections = {
     document.getElementById('admin-main').innerHTML = `
       <div class="admin-head"><h2>Bağış Onayları</h2></div>
       <div class="tab-bar">
-        <button onclick="filterDonations('all')" class="active">Tümü (${all.length})</button>
-        <button onclick="filterDonations('pending')">Bekleyen (${all.filter(d => d.status === 'pending').length})</button>
-        <button onclick="filterDonations('approved')">Onaylanmış (${all.filter(d => d.status === 'approved').length})</button>
-        <button onclick="filterDonations('rejected')">Reddedilmiş (${all.filter(d => d.status === 'rejected').length})</button>
+        <button onclick="filterDonations('all', this)" class="active">Tümü (${all.length})</button>
+        <button onclick="filterDonations('pending', this)">Bekleyen (${all.filter(d => d.status === 'pending').length})</button>
+        <button onclick="filterDonations('approved', this)">Onaylanmış (${all.filter(d => d.status === 'approved').length})</button>
+        <button onclick="filterDonations('rejected', this)">Reddedilmiş (${all.filter(d => d.status === 'rejected').length})</button>
       </div>
       <div class="admin-section"><div id="donations-list"></div></div>
     `;
@@ -119,9 +119,9 @@ const sections = {
             ${users.map(u => `
               <tr>
                 <td>${u.id}</td>
-                <td>${u.name}</td>
-                <td>${u.email}</td>
-                <td>${u.phone || '-'}</td>
+                <td>${escapeHtml(u.name)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>${escapeHtml(u.phone || '-')}</td>
                 <td>
                   <select onchange="updateRole(${u.id}, this.value)">
                     <option ${u.role === 'donor' ? 'selected' : ''} value="donor">Bağışçı</option>
@@ -149,10 +149,10 @@ const sections = {
           ${threads.length === 0 ? '<div class="empty">Mesaj yok</div>' : `
             <div class="doc-list">
               ${threads.map(t => `
-                <div class="doc-item" style="cursor:pointer" onclick="openThread('${t.user_id || t.email || t.name}', '${t.name}', '${t.email || ''}', ${t.user_id || 'null'})">
+                <div class="doc-item" style="cursor:pointer" onclick="openThread('${escapeHtml(String(t.user_id || t.email || t.name))}', '${escapeHtml(t.name)}', '${escapeHtml(t.email || '')}', ${t.user_id || 'null'})">
                   <div>
-                    <strong>${t.name}</strong>${t.unread > 0 ? ` <span class="badge" style="background:var(--danger);color:#fff">${t.unread}</span>` : ''}
-                    <div class="muted" style="font-size:.8rem">${t.email || '-'} · ${new Date(t.last_at).toLocaleString('tr-TR')}</div>
+                    <strong>${escapeHtml(t.name)}</strong>${t.unread > 0 ? ` <span class="badge" style="background:var(--danger);color:#fff">${t.unread}</span>` : ''}
+                    <div class="muted" style="font-size:.8rem">${escapeHtml(t.email || '-')} · ${new Date(t.last_at).toLocaleString('tr-TR')}</div>
                   </div>
                   <span>→</span>
                 </div>`).join('')}
@@ -290,7 +290,7 @@ const sections = {
             </tr>`).join('')}
         </tbody>
       </table></div>`,
-    publicEndpoint: '/api/hero'
+    publicEndpoint: '/api/admin/hero'
   }); },
 
   async boards() { await renderCrudSection({
@@ -448,6 +448,16 @@ function openFormModal(key, fields, row, title) {
         if (f.type === 'textarea') return `<div class="${cls}"><label>${f.label}</label><textarea name="${f.k}" rows="3">${escapeHtml(v)}</textarea></div>`;
         if (f.type === 'checkbox') return `<div class="${cls}"><label><input type="checkbox" name="${f.k}" ${v ? 'checked' : ''}/> ${f.label}</label></div>`;
         if (f.type === 'select') return `<div class="${cls}"><label>${f.label}</label><select name="${f.k}">${f.options.map(([val, lbl]) => `<option value="${val}" ${v === val ? 'selected' : ''}>${lbl}</option>`).join('')}</select></div>`;
+        if (f.k === 'media_url' || f.k === 'cover_image') return `<div class="${cls}">
+          <label>${f.label}</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" name="${f.k}" id="upload_url_${f.k}" value="${escapeHtml(v)}" style="flex:1" placeholder="URL girin veya dosya yükleyin" />
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;white-space:nowrap;margin:0">
+              📁 Yükle
+              <input type="file" accept="image/*,video/*" style="display:none" onchange="uploadMediaFile(this, '${f.k}')">
+            </label>
+          </div>
+        </div>`;
         return `<div class="${cls}"><label>${f.label}</label><input type="${f.type || 'text'}" name="${f.k}" value="${escapeHtml(v)}" /></div>`;
       }).join('')}
     </div>
@@ -457,6 +467,20 @@ function openFormModal(key, fields, row, title) {
     </div>
   `;
   document.getElementById('modal').classList.add('open');
+}
+
+async function uploadMediaFile(input, fieldKey) {
+  const file = input.files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }).then(res => res.json());
+  if (r.url) {
+    const inp = document.getElementById('upload_url_' + fieldKey);
+    if (inp) inp.value = r.url;
+  } else {
+    alert('Dosya yükleme başarısız: ' + (r.error || 'Bilinmeyen hata'));
+  }
 }
 
 async function saveItem(key, id) {
@@ -470,7 +494,12 @@ async function saveItem(key, id) {
     else if (f.type === 'number') data[f.k] = parseFloat(el.value) || 0;
     else data[f.k] = el.value;
   });
-  if (!data.slug && data.title) data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/gi, '-');
+  if (!data.slug && data.title) {
+    data.slug = data.title.toLowerCase()
+      .replace(/ğ/g, 'g').replace(/ü/g, 'u').replace(/ş/g, 's')
+      .replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ç/g, 'c')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
 
   const url = id ? `/api/admin/${key}/${id}` : `/api/admin/${key}`;
   const method = id ? 'PUT' : 'POST';
@@ -499,7 +528,7 @@ function renderDonationList(filter) {
         ${rows.map(d => `
           <tr>
             <td>${new Date(d.created_at).toLocaleString('tr-TR')}</td>
-            <td><strong>${d.user_name}</strong><div class="muted" style="font-size:.8rem">${d.user_email}</div>${d.note ? `<div class="muted" style="font-size:.75rem">📝 ${d.note}</div>` : ''}</td>
+            <td><strong>${escapeHtml(d.user_name)}</strong><div class="muted" style="font-size:.8rem">${escapeHtml(d.user_email)}</div>${d.note ? `<div class="muted" style="font-size:.75rem">📝 ${escapeHtml(d.note)}</div>` : ''}</td>
             <td><strong>${formatTL(d.amount)}</strong></td>
             <td>${d.category_title || d.campaign_title || 'Genel'}</td>
             <td><span class="badge ${d.status}">${{ pending: 'Bekliyor', approved: 'Onaylı', rejected: 'Red' }[d.status]}</span></td>
@@ -514,9 +543,9 @@ function renderDonationList(filter) {
       </tbody>
     </table></div>`;
 }
-function filterDonations(f) {
+function filterDonations(f, el) {
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  if (el) el.classList.add('active');
   renderDonationList(f);
 }
 async function approveDonation(id) {
@@ -541,11 +570,11 @@ async function updateTags(id, tags) {
 async function openThread(key, name, email, userId) {
   const rows = await api('/api/admin/messages/' + encodeURIComponent(key));
   document.getElementById('thread-panel').innerHTML = `
-    <h3>${name} ${email ? `<small class="muted">· ${email}</small>` : ''}</h3>
+    <h3>${escapeHtml(name)} ${email ? `<small class="muted">· ${escapeHtml(email)}</small>` : ''}</h3>
     <div class="chat-thread">
       ${rows.map(m => `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${escapeHtml(m.body)}<div style="font-size:.65rem; opacity:.6; margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`).join('')}
     </div>
-    <form onsubmit="reply(event, ${userId || 'null'}, '${email}', '${name}')">
+    <form onsubmit="reply(event, ${userId || 'null'}, '${escapeHtml(email)}', '${escapeHtml(name)}')">
       <div class="form-group"><textarea name="body" rows="3" placeholder="Yanıtınız..." required></textarea></div>
       <button class="btn btn-primary" type="submit">Yanıt Gönder</button>
     </form>

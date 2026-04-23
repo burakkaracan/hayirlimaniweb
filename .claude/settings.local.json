@@ -6,7 +6,10 @@
       "Bash(timeout 5 node server.js)",
       "Bash(timeout 5 env PORT=3099 node server.js)",
       "Bash(rm -f data.sqlite data.sqlite-shm data.sqlite-wal mail.log)",
-      "Bash(rm -rf uploads docx_extracted)"
+      "Bash(rm -rf uploads docx_extracted)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"require\\('./database'\\); console.log\\('DB OK'\\)\")",
+      "Bash(node -c server.js)"
     ]
   }
 }

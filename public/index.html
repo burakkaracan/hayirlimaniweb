@@ -183,6 +183,7 @@
     }
 
     function quickDonate() {
+      if (!currentUser) return location.href = '/giris.html?ret=' + encodeURIComponent('/bagis-yap.html');
       const type = document.getElementById('qd-type').value;
       const amount = document.getElementById('qd-amount').value;
       if (!amount || amount <= 0) return alert('Lütfen bir bağış tutarı girin.');
@@ -190,6 +191,7 @@
     }
 
     function goDonate() {
+      if (!currentUser) return location.href = '/giris.html?ret=' + encodeURIComponent('/bagis-yap.html');
       const selected = document.querySelector('.amount-btn.active');
       const custom = document.getElementById('custom-amount').value;
       const amt = custom || (selected ? selected.dataset.val : '');

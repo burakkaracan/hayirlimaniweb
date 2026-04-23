@@ -324,6 +324,9 @@ app.delete('/api/admin/activities/:id', requireAdmin, (req, res) => {
 });
 
 // hero CRUD
+app.get('/api/admin/hero', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM hero_slides ORDER BY sort_order').all());
+});
 app.post('/api/admin/hero', requireAdmin, (req, res) => {
   const { title, subtitle, button_text, button_link, media_url, media_type, sort_order, active } = req.body;
   const info = db.prepare('INSERT INTO hero_slides(title,subtitle,button_text,button_link,media_url,media_type,sort_order,active) VALUES(?,?,?,?,?,?,?,?)')

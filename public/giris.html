@@ -28,11 +28,6 @@
           Henüz hesabınız yok mu? <a href="/kayit.html">Kayıt olun</a>
         </div>
       </form>
-      <div class="form-foot" style="border-top:1px solid var(--border); padding-top:16px; margin-top:20px; font-size:.8rem;">
-        <strong>Demo hesaplar:</strong><br>
-        admin@hayirlimani.com / admin123<br>
-        bagisci@ornek.com / bagisci123
-      </div>
     </div>
   </div>
 
@@ -48,7 +43,14 @@
         body: { email: f.email.value, password: f.password.value }
       });
       if (r.ok) {
-        location.href = r.role === 'admin' || r.role === 'staff' ? '/admin.html' : '/profil.html';
+        const ret = new URLSearchParams(location.search).get('ret');
+        if (ret && ret.startsWith('/')) {
+          location.href = ret;
+        } else if (r.role === 'admin' || r.role === 'staff') {
+          location.href = '/admin.html';
+        } else {
+          location.href = '/profil.html';
+        }
       } else {
         msg.className = 'form-msg error';
         msg.textContent = r.error || 'Giriş başarısız';
