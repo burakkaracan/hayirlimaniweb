@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hayır Limanı Derneği — Her Mazlumun Kıyısında</title>
+  <meta name="description" content="Hayır Limanı Derneği; bağış, kurban, su kuyusu, yetim, eğitim ve acil yardım projeleri ile her mazlumun kıyısında.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <!-- HERO SLIDER -->
+  <section class="hero">
+    <div class="hero-slider" id="hero-slider">
+      <div class="loader">Yükleniyor…</div>
+    </div>
+    <div class="hero-dots" id="hero-dots"></div>
+  </section>
+
+  <div class="container">
+    <!-- QUICK DONATE BAR -->
+    <div class="quick-donate-bar">
+      <div class="qd-label">
+        <strong>💚 Hızlı Bağış</strong>
+        <span>Hayra vesile olun, hayat değiştirin.</span>
+      </div>
+      <select id="qd-type">
+        <option value="">Bağış Türü Seçin</option>
+      </select>
+      <input type="number" id="qd-amount" placeholder="Tutar (₺)" min="1" />
+      <button class="btn btn-primary btn-lg" onclick="quickDonate()">Hemen Destek Ol</button>
+    </div>
+
+    <!-- CATEGORIES -->
+    <section class="section">
+      <div class="section-head">
+        <div class="eyebrow">Bağış Türleri</div>
+        <h2>Hangi alanda destek olmak istersiniz?</h2>
+        <p>Sizin için anlamlı olan bir çalışmayı seçerek bağışınızı ihtiyaç sahibine ulaştırabilirsiniz.</p>
+      </div>
+      <div class="categories" id="categories"></div>
+    </section>
+
+    <!-- AMOUNT PICKER -->
+    <section class="section">
+      <div class="amount-picker">
+        <div class="grid-2" style="align-items:center; gap:40px;">
+          <div>
+            <div class="eyebrow" style="color:var(--accent-dark); font-weight:600; letter-spacing:3px; text-transform:uppercase; font-size:.8rem;">Hızlı Tutar</div>
+            <h3>Bağışınız, birinin umudu olsun</h3>
+            <p class="sub">Hazır tutarlardan birini seçin ya da kendi tutarınızı girin. Her destek yerini bulur.</p>
+          </div>
+          <div>
+            <div class="amounts" id="amount-buttons">
+              <button class="amount-btn" data-val="100">100 ₺</button>
+              <button class="amount-btn" data-val="250">250 ₺</button>
+              <button class="amount-btn" data-val="500">500 ₺</button>
+              <button class="amount-btn" data-val="1000">1000 ₺</button>
+              <button class="amount-btn" data-val="2500">2500 ₺</button>
+              <button class="amount-btn" data-val="5000">5000 ₺</button>
+            </div>
+            <div class="amount-custom">
+              <input type="number" id="custom-amount" placeholder="Farklı tutar (₺)" />
+              <button class="btn btn-primary" onclick="goDonate()">Bağış Yap</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAMPAIGNS -->
+    <section class="section">
+      <div class="section-head">
+        <div class="eyebrow">Aktif Kampanyalar</div>
+        <h2>Kampanyalarımıza Destek Olun</h2>
+        <p>Belirlenen hedeflerle yürüttüğümüz kampanyaların ilerleyişini takip edebilir, dilediğiniz zaman katkı sunabilirsiniz.</p>
+      </div>
+      <div class="campaigns" id="campaigns"></div>
+    </section>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+
+  <script src="/js/main.js"></script>
+  <script>
+    let heroSlides = [];
+    let heroIndex = 0;
+    let heroTimer = null;
+
+    async function loadHero() {
+      heroSlides = await api('/api/hero');
+      const slider = document.getElementById('hero-slider');
+      const dots = document.getElementById('hero-dots');
+      if (!heroSlides.length) {
+        // fallback
+        heroSlides = [{
+          title: 'Her mazlumun kıyısında',
+          subtitle: 'Hayır Limanı Derneği olarak bağışlarınızı ihtiyaç sahiplerine en hızlı, en şeffaf şekilde ulaştırıyoruz.',
+          button_text: 'Bağış Yap',
+          button_link: '/bagis-yap.html',
+          media_url: '',
+          media_type: 'image'
+        }];
+      }
+      slider.innerHTML = heroSlides.map((s, i) => {
+        const bg = s.media_url ? `background-image:url('${s.media_url}')` : `background:linear-gradient(135deg, #0d4d36, #136b4a)`;
+        const media = s.media_type === 'video' && s.media_url
+          ? `<video autoplay muted loop playsinline src="${s.media_url}"></video>`
+          : '';
+        return `
+          <div class="hero-slide ${i === 0 ? 'active' : ''}" style="${bg}">
+            ${media}
+            <div class="container hero-content">
+              <h1>${s.title || ''}</h1>
+              <p>${s.subtitle || ''}</p>
+              ${s.button_text ? `<a href="${s.button_link || '/bagis-yap.html'}" class="btn btn-accent btn-lg">${s.button_text}</a>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+      dots.innerHTML = heroSlides.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" onclick="goSlide(${i})"></button>`).join('');
+      if (heroSlides.length > 1) startHeroRotation();
+    }
+    function goSlide(i) {
+      heroIndex = i;
+      document.querySelectorAll('.hero-slide').forEach((el, idx) => el.classList.toggle('active', idx === i));
+      document.querySelectorAll('.hero-dots button').forEach((el, idx) => el.classList.toggle('active', idx === i));
+      startHeroRotation();
+    }
+    function startHeroRotation() {
+      clearInterval(heroTimer);
+      heroTimer = setInterval(() => {
+        heroIndex = (heroIndex + 1) % heroSlides.length;
+        goSlide(heroIndex);
+      }, 6000);
+    }
+
+    async function loadCategories() {
+      const cats = await api('/api/categories');
+      document.getElementById('categories').innerHTML = cats.map(c => `
+        <a href="/bagis-yap.html?kat=${c.slug}" class="category-card">
+          <div class="cat-icon">${c.icon || '💚'}</div>
+          <div class="cat-title">${c.title}</div>
+          ${c.price ? `<div class="cat-price">Birim ${formatTL(c.price)}</div>` : ''}
+        </a>
+      `).join('');
+      const qd = document.getElementById('qd-type');
+      qd.innerHTML = '<option value="">Bağış Türü Seçin</option>' + cats.map(c => `<option value="${c.slug}" data-price="${c.price}">${c.title}${c.price ? ` (${formatTL(c.price)})` : ''}</option>`).join('');
+      qd.addEventListener('change', () => {
+        const opt = qd.options[qd.selectedIndex];
+        const p = parseFloat(opt.dataset.price || 0);
+        if (p) document.getElementById('qd-amount').value = p;
+      });
+    }
+
+    async function loadCampaigns() {
+      const cs = await api('/api/campaigns');
+      document.getElementById('campaigns').innerHTML = cs.map(c => {
+        const pct = c.goal > 0 ? Math.min(100, Math.round((c.raised / c.goal) * 100)) : 0;
+        const bg = c.cover_image ? `background-image:url('${c.cover_image}')` : '';
+        return `
+          <div class="campaign-card">
+            <div class="img" style="${bg}">
+              <span class="tag">Aktif Kampanya</span>
+            </div>
+            <div class="content">
+              <h3>${c.title}</h3>
+              <p class="summary">${c.summary || ''}</p>
+              <div class="progress"><div class="fill" style="width:${pct}%"></div></div>
+              <div class="campaign-stats">
+                <div><strong>${formatTL(c.raised)}</strong><span>Toplanan</span></div>
+                <div><strong>${formatTL(c.goal)}</strong><span>Hedef</span></div>
+                <div><strong>${formatNumber(c.donor_count)}</strong><span>Bağışçı</span></div>
+              </div>
+              <a href="/kampanya.html?slug=${c.slug}" class="btn btn-primary btn-block">Bağış Yap</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function quickDonate() {
+      const type = document.getElementById('qd-type').value;
+      const amount = document.getElementById('qd-amount').value;
+      if (!amount || amount <= 0) return alert('Lütfen bir bağış tutarı girin.');
+      location.href = `/bagis-yap.html?kat=${type}&tutar=${amount}`;
+    }
+
+    function goDonate() {
+      const selected = document.querySelector('.amount-btn.active');
+      const custom = document.getElementById('custom-amount').value;
+      const amt = custom || (selected ? selected.dataset.val : '');
+      if (!amt) return alert('Lütfen bir tutar seçin ya da girin.');
+      location.href = `/bagis-yap.html?tutar=${amt}`;
+    }
+
+    window.addEventListener('app-ready', () => {
+      loadHero();
+      loadCategories();
+      loadCampaigns();
+      document.querySelectorAll('.amount-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.amount-btn').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          document.getElementById('custom-amount').value = '';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

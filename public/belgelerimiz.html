@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Belgelerimiz — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Belgelerimiz</h1>
+      <div class="breadcrumb"><a href="/">Anasayfa</a> / Kurumsal / Belgelerimiz</div>
+    </div>
+  </section>
+
+  <div class="container section">
+    <div class="card">
+      <p class="muted" style="margin-bottom:20px;">Dernek tüzüğümüz, faaliyet raporlarımız ve resmi belgelerimize aşağıdan ulaşabilirsiniz.</p>
+      <div class="doc-list" id="docs"></div>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    window.addEventListener('app-ready', async () => {
+      const rows = await api('/api/documents');
+      const el = document.getElementById('docs');
+      if (!rows.length) return el.innerHTML = '<div class="empty">Henüz belge eklenmedi.</div>';
+      el.innerHTML = rows.map(d => `
+        <div class="doc-item">
+          <div class="doc-title">${d.title}</div>
+          <a href="${d.file_url}" target="_blank" class="btn btn-outline btn-sm">İndir</a>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faaliyetler — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Faaliyetlerimiz</h1>
+      <div class="breadcrumb"><a href="/">Anasayfa</a> / Faaliyetler</div>
+    </div>
+  </section>
+
+  <div class="container section">
+    <div class="section-head">
+      <div class="eyebrow">Sahadan Haberler</div>
+      <h2>Gerçekleştirdiğimiz ve süren çalışmalar</h2>
+      <p>Yardımlarınızın nerelere ulaştığını, hangi projelere dönüştüğünü burada takip edebilirsiniz.</p>
+    </div>
+    <div class="campaigns" id="activities"></div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    window.addEventListener('app-ready', async () => {
+      const rows = await api('/api/activities');
+      const el = document.getElementById('activities');
+      if (!rows.length) return el.innerHTML = '<div class="empty">Henüz faaliyet eklenmedi.</div>';
+      el.innerHTML = rows.map(a => {
+        const bg = a.cover_image ? `background-image:url('${a.cover_image}')` : '';
+        return `
+          <div class="campaign-card">
+            <div class="img" style="${bg}">
+              <span class="tag">${a.location || 'Faaliyet'}</span>
+            </div>
+            <div class="content">
+              <h3>${a.title}</h3>
+              <p class="summary">${a.short_description || ''}</p>
+              <div class="muted" style="font-size:.85rem; margin-bottom:14px;">📅 ${a.date || '-'}</div>
+              <a href="/faaliyet.html?slug=${a.slug}" class="btn btn-primary btn-block">Detayları Gör & Destek Ol</a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    });
+  </script>
+</body>
+</html>

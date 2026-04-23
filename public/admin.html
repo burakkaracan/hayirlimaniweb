@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: var(--bg); }
+    .data-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .data-form .wide { grid-column: 1 / -1; }
+    .data-form label { display: block; margin-bottom: 4px; font-weight: 600; font-size: .85rem; }
+    .data-form input, .data-form textarea, .data-form select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: #fff;
+    }
+    .action-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .flex-spacer { flex: 1; }
+    .chat-thread { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding: 12px; background: var(--bg); border-radius: var(--radius); margin-bottom: 12px; }
+    .tab-bar { display: flex; gap: 2px; background: #fff; padding: 4px; border-radius: var(--radius); margin-bottom: 20px; overflow-x: auto; }
+    .tab-bar button { padding: 10px 16px; border-radius: 8px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .tab-bar button.active { background: var(--brand); color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="admin-root">
+    <div class="loader">Yükleniyor…</div>
+  </div>
+
+  <div class="modal-backdrop" id="modal"><div class="modal" id="modal-body"></div></div>
+
+  <script src="/js/main.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

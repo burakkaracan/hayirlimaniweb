@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bağış Yap — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Bağış Yap</h1>
+      <div class="breadcrumb"><a href="/">Anasayfa</a> / Bağış Yap</div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div class="payment-card">
+      <h1>🌿 Havale / EFT ile Bağış</h1>
+      <p class="intro">Sanal pos sistemimiz yakında hizmetinize girecektir. Bu süreçte bağışlarınızı aşağıdaki IBAN numarasına yapabilirsiniz.</p>
+
+      <div class="iban-display">
+        <div class="label">Bağış IBAN</div>
+        <div class="value" id="iban-val">—</div>
+        <div class="holder" id="iban-holder">—</div>
+        <button class="btn btn-outline btn-sm" onclick="copyIban()">IBAN'ı Kopyala</button>
+      </div>
+
+      <div class="card" style="background:var(--bg); border:none; margin-bottom:20px;">
+        <h3 style="color:var(--brand-dark); margin-bottom:12px;">Bağış Bilgileri</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Bağış Türü</label>
+            <select id="category"><option value="">Genel Bağış</option></select>
+          </div>
+          <div class="form-group">
+            <label>Bağış Tutarı</label>
+            <input type="number" id="amount" min="1" placeholder="Tutar (₺)" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Açıklama (opsiyonel)</label>
+          <input type="text" id="note" placeholder="Açıklama kısmına “Bağış” yazabilirsiniz" />
+        </div>
+        <div id="guest-fields" class="grid-2 hidden">
+          <div class="form-group"><label>Ad Soyad</label><input type="text" id="gname" /></div>
+          <div class="form-group"><label>E-posta</label><input type="email" id="gemail" /></div>
+        </div>
+        <p class="muted" style="font-size:.85rem;">
+          💡 Bağış işleminizi gerçekleştirdikten sonra aşağıdaki <strong>Bağış Yaptım</strong> butonuna basarak bildirimde bulunun. Ekibimiz doğrulamayı yapıp makbuzunuzu e-posta ile iletecektir.
+        </p>
+      </div>
+
+      <div class="payment-actions">
+        <button class="btn btn-primary btn-lg" onclick="submitDonation()">✓ Bağış Yaptım</button>
+        <a href="/" class="btn btn-outline btn-lg text-center">Vazgeçtim</a>
+      </div>
+
+      <div id="login-notice" class="form-msg hidden" style="background:#fff8e1; color:#7d5e00; display:block; margin-top:20px;">
+        ℹ️ Misafir olarak bağış yapıyorsunuz. Bağış geçmişinizi takip edebilmek için <a href="/giris.html">giriş yapın</a> veya <a href="/kayit.html">kayıt olun</a>.
+      </div>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    window.addEventListener('app-ready', async () => {
+      document.getElementById('iban-val').textContent = appSettings.iban || '';
+      document.getElementById('iban-holder').textContent = appSettings.iban_holder || '';
+
+      const cats = await api('/api/categories');
+      const sel = document.getElementById('category');
+      sel.innerHTML = '<option value="">Genel Bağış</option>' + cats.map(c => `<option value="${c.id}" data-slug="${c.slug}" data-price="${c.price}">${c.title}</option>`).join('');
+
+      const katParam = qs('kat');
+      if (katParam) {
+        const opt = [...sel.options].find(o => o.dataset.slug === katParam);
+        if (opt) {
+          sel.value = opt.value;
+          if (opt.dataset.price > 0 && !qs('tutar')) document.getElementById('amount').value = opt.dataset.price;
+        }
+      }
+      const t = qs('tutar'); if (t) document.getElementById('amount').value = t;
+
+      if (!currentUser) {
+        document.getElementById('guest-fields').classList.remove('hidden');
+        document.getElementById('login-notice').classList.remove('hidden');
+      }
+    });
+
+    function copyIban() {
+      navigator.clipboard.writeText(appSettings.iban || '').then(() => alert('IBAN kopyalandı'));
+    }
+
+    async function submitDonation() {
+      const amt = parseFloat(document.getElementById('amount').value);
+      if (!amt || amt <= 0) return alert('Lütfen geçerli bir tutar girin');
+      const cat = document.getElementById('category').value;
+      const note = document.getElementById('note').value;
+      const camp = qs('kampanya');
+      const payload = { amount: amt, note };
+      if (cat) payload.category_id = parseInt(cat);
+      if (camp) payload.campaign_id = parseInt(camp);
+      if (!currentUser) {
+        payload.name = document.getElementById('gname').value;
+        payload.email = document.getElementById('gemail').value;
+        if (!payload.name || !payload.email) return alert('Misafir bağış için Ad Soyad ve e-posta gereklidir.');
+      }
+      const r = await api('/api/donations', { method: 'POST', body: payload });
+      if (r.ok) location.href = '/bagis-bildirimi.html?id=' + r.id;
+      else alert(r.error || 'Bağış bildirimi kaydedilemedi');
+    }
+  </script>
+</body>
+</html>

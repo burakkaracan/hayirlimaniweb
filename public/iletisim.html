@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İletişim — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>İletişim</h1>
+      <div class="breadcrumb"><a href="/">Anasayfa</a> / İletişim</div>
+    </div>
+  </section>
+
+  <div class="container section">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <h2 style="margin-bottom:20px;">Bizimle iletişime geçin</h2>
+        <p class="muted" style="margin-bottom:20px;">Her türlü soru, öneri ve bağış süreçleri için aşağıdaki kanallardan bize ulaşabilirsiniz. Dernek merkezimizi ziyaret etmekten çekinmeyin.</p>
+
+        <div class="info-item">
+          <div class="icon">📍</div>
+          <div><h4>Adres</h4><div id="info-address"></div></div>
+        </div>
+        <div class="info-item">
+          <div class="icon">📞</div>
+          <div><h4>Telefon</h4><a id="info-phone" href="#"></a></div>
+        </div>
+        <div class="info-item">
+          <div class="icon">✉️</div>
+          <div><h4>E-posta</h4><a id="info-email" href="#"></a></div>
+        </div>
+        <div class="info-item">
+          <div class="icon">🏦</div>
+          <div>
+            <h4>Bağış IBAN</h4>
+            <div id="info-iban" style="font-weight:600;"></div>
+            <div class="muted" id="info-iban-holder" style="font-size:.85rem;"></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <iframe class="map-frame" id="map-frame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:40px;">
+      <h3>Mesaj Gönderin</h3>
+      <p class="muted" style="margin-bottom:20px;">Formu doldurduğunuzda ekibimiz en kısa sürede sizinle iletişime geçecektir.</p>
+      <div class="form-msg" id="c-msg"></div>
+      <form onsubmit="sendContact(event)">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Ad Soyad</label>
+            <input type="text" name="name" required />
+          </div>
+          <div class="form-group">
+            <label>E-posta</label>
+            <input type="email" name="email" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mesajınız</label>
+          <textarea name="body" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Gönder</button>
+      </form>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    window.addEventListener('app-ready', () => {
+      const s = appSettings;
+      document.getElementById('info-address').textContent = s.address || '';
+      const phone = s.phone || '';
+      const phoneLink = document.getElementById('info-phone');
+      phoneLink.textContent = phone; phoneLink.href = 'tel:' + phone.replace(/\s/g, '');
+      const mail = document.getElementById('info-email');
+      mail.textContent = s.email || ''; mail.href = 'mailto:' + (s.email || '');
+      document.getElementById('info-iban').textContent = s.iban || '';
+      document.getElementById('info-iban-holder').textContent = s.iban_holder || '';
+      const map = document.getElementById('map-frame');
+      const addr = encodeURIComponent(s.address || 'Ankara');
+      map.src = `https://www.google.com/maps?q=${addr}&output=embed`;
+    });
+
+    async function sendContact(e) {
+      e.preventDefault();
+      const f = e.target;
+      const msg = document.getElementById('c-msg');
+      const r = await api('/api/messages', {
+        method: 'POST',
+        body: { name: f.name.value, email: f.email.value, body: f.body.value }
+      });
+      if (r.ok) {
+        msg.className = 'form-msg success';
+        msg.textContent = 'Mesajınız alındı. En kısa sürede dönüş yapılacaktır.';
+        f.reset();
+      } else {
+        msg.className = 'form-msg error';
+        msg.textContent = r.error || 'Bir hata oluştu.';
+      }
+    }
+  </script>
+</body>
+</html>

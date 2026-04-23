@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profilim — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <div class="container">
+    <div id="profile-root">
+      <div class="loader">Yükleniyor…</div>
+    </div>
+  </div>
+
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    let donations = [];
+
+    window.addEventListener('app-ready', async () => {
+      if (!currentUser) { location.href = '/giris.html'; return; }
+      donations = await api('/api/my-donations');
+      render();
+    });
+
+    function render() {
+      const u = currentUser;
+      const initial = (u.name || 'B').charAt(0).toUpperCase();
+      const tab = qs('sekme') || 'bagislarim';
+
+      document.getElementById('profile-root').innerHTML = `
+        <div class="profile-layout">
+          <aside class="profile-sidebar">
+            <div class="avatar">${initial}</div>
+            <div class="pname">${u.name}</div>
+            <div class="pmail">${u.email}</div>
+            <div class="profile-tabs">
+              <button class="${tab === 'bagislarim' ? 'active' : ''}" onclick="switchTab('bagislarim')">Bağışlarım</button>
+              <button class="${tab === 'belgelerim' ? 'active' : ''}" onclick="switchTab('belgelerim')">Makbuzlarım</button>
+              <button class="${tab === 'bilgilerim' ? 'active' : ''}" onclick="switchTab('bilgilerim')">Hesap Bilgilerim</button>
+              <button onclick="logout(event)">Çıkış Yap</button>
+            </div>
+          </aside>
+          <main id="profile-main"></main>
+        </div>`;
+      renderTab(tab);
+    }
+
+    function switchTab(t) {
+      history.replaceState(null, '', '/profil.html?sekme=' + t);
+      render();
+    }
+
+    function renderTab(tab) {
+      const host = document.getElementById('profile-main');
+      if (tab === 'bagislarim') {
+        const total = donations.filter(d => d.status === 'approved').reduce((a, b) => a + b.amount, 0);
+        host.innerHTML = `
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-label">Toplam Bağış Sayısı</div><div class="stat-value">${donations.length}</div></div>
+            <div class="stat-card"><div class="stat-label">Onaylı Toplam Tutar</div><div class="stat-value">${formatTL(total)}</div></div>
+            <div class="stat-card"><div class="stat-label">Bekleyen</div><div class="stat-value">${donations.filter(d => d.status === 'pending').length}</div></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:16px;">Bağış Geçmişi</h3>
+            ${donations.length === 0 ? '<div class="empty">Henüz bir bağış yapmadınız.</div>' : `
+              <div class="table-wrap"><table>
+                <thead><tr><th>Tarih</th><th>Kategori</th><th>Tutar</th><th>Durum</th><th>Makbuz</th></tr></thead>
+                <tbody>
+                  ${donations.map(d => `
+                    <tr>
+                      <td>${new Date(d.created_at).toLocaleDateString('tr-TR')}</td>
+                      <td>${d.category_title || d.campaign_title || 'Genel Bağış'}</td>
+                      <td><strong>${formatTL(d.amount)}</strong></td>
+                      <td><span class="badge ${d.status}">${statusLabel(d.status)}</span></td>
+                      <td>${d.receipt_file ? `<a href="${d.receipt_file}" target="_blank" class="btn btn-outline btn-sm">İndir</a>` : '-'}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table></div>`}
+          </div>
+        `;
+      } else if (tab === 'belgelerim') {
+        const approved = donations.filter(d => d.status === 'approved' && d.receipt_file);
+        host.innerHTML = `
+          <div class="card">
+            <h3 style="margin-bottom:16px;">Onaylanan Bağış Makbuzlarınız</h3>
+            ${approved.length === 0 ? '<div class="empty">Henüz makbuz bulunmuyor. Bağışlarınız onaylandığında burada listelenecektir.</div>' : `
+              <div class="doc-list">
+                ${approved.map(d => `
+                  <div class="doc-item">
+                    <div class="doc-title">${d.category_title || d.campaign_title || 'Bağış'} — ${formatTL(d.amount)} (${new Date(d.created_at).toLocaleDateString('tr-TR')})</div>
+                    <a href="${d.receipt_file}" target="_blank" class="btn btn-outline btn-sm">Görüntüle</a>
+                  </div>`).join('')}
+              </div>`}
+          </div>
+        `;
+      } else if (tab === 'bilgilerim') {
+        host.innerHTML = `
+          <div class="card">
+            <h3 style="margin-bottom:16px;">Hesap Bilgilerim</h3>
+            <div class="grid-2">
+              <div class="form-group"><label>Ad Soyad</label><input type="text" value="${currentUser.name}" readonly /></div>
+              <div class="form-group"><label>E-posta</label><input type="email" value="${currentUser.email}" readonly /></div>
+              <div class="form-group"><label>Telefon</label><input type="tel" value="${currentUser.phone || ''}" readonly /></div>
+              <div class="form-group"><label>Rol</label><input type="text" value="${currentUser.role === 'admin' ? 'Yönetici' : currentUser.role === 'staff' ? 'Personel' : 'Bağışçı'}" readonly /></div>
+            </div>
+            <p class="muted" style="font-size:.9rem;">Bilgilerinizi güncellemek için <a href="/iletisim.html">bize ulaşın</a>.</p>
+          </div>
+        `;
+      }
+    }
+
+    function statusLabel(s) {
+      return { pending: 'Bekliyor', approved: 'Onaylandı', rejected: 'Reddedildi' }[s] || s;
+    }
+  </script>
+</body>
+</html>

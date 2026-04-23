@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o \"Web Site Prompt.docx\" -d \"docx_extracted\")",
+      "Bash(npm install *)",
+      "Bash(timeout 5 node server.js)",
+      "Bash(timeout 5 env PORT=3099 node server.js)",
+      "Bash(rm -f data.sqlite data.sqlite-shm data.sqlite-wal mail.log)",
+      "Bash(rm -rf uploads docx_extracted)"
+    ]
+  }
+}
