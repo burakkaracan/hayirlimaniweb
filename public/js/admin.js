@@ -17,9 +17,8 @@ function renderShell() {
   document.getElementById('admin-root').innerHTML = `
     <div class="admin-shell">
       <aside class="admin-sidebar">
-        <a href="/" class="logo" style="color:#fff">
-          <span class="logo-mark">⚓</span>
-          <span class="logo-text">Hayır Limanı<small>Admin Panel</small></span>
+        <a href="/" class="logo" style="display:block; padding: 0 0 16px;">
+          <img src="/images/logo.png" alt="Hayır Limanı" class="logo-img" style="filter:brightness(0) invert(1); max-height:40px;" />
         </a>
         <nav class="admin-nav">
           <a href="#dashboard" data-s="dashboard">📊 Panel</a>

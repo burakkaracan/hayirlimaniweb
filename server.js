@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 const { db, setSetting, getSetting } = require('./database');
+const { generateReceiptPDF } = require('./receipt');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -237,23 +238,52 @@ app.get('/api/admin/donations', requireAdmin, (req, res) => {
   res.json(db.prepare(sql).all(...params));
 });
 
-app.post('/api/admin/donations/:id/approve', requireAdmin, (req, res) => {
+app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
   const id = req.params.id;
   const d = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
   if (!d) return res.status(404).json({ error: 'Bulunamadı' });
-  const receiptName = `dekont-${id}-${Date.now()}.txt`;
-  const receiptText = `HAYIR LİMANI DERNEĞİ\nBağış Dekontu / Makbuzu\n--------------------------------\nBağış ID: ${id}\nBağışçı: ${d.user_name}\nE-posta: ${d.user_email}\nTutar: ${d.amount} TL\nTarih: ${new Date().toLocaleString('tr-TR')}\nAçıklama: ${d.note || 'Genel Bağış'}\n${req.body?.adminComment ? 'Not: ' + req.body.adminComment : ''}\n\nBu belge yasal bağış makbuzu olarak düzenlenmiştir.`;
-  fs.writeFileSync(path.join(uploadDir, receiptName), receiptText);
-  db.prepare('UPDATE donations SET status=?, approved_at=CURRENT_TIMESTAMP, receipt_file=?, admin_comment=? WHERE id=?')
-    .run('approved', `/uploads/${receiptName}`, req.body?.adminComment || '', id);
-  if (d.user_email) {
-    mailerSend(d.user_email, 'Bağışınız Onaylandı',
-      `<p>Sayın ${d.user_name},</p><p>${d.amount} TL tutarındaki bağışınız onaylanmıştır. Makbuzunuza profil sayfanızdaki "Bağışlarım" bölümünden ulaşabilirsiniz.</p><p>Hayır Limanı Derneği</p>`);
+
+  const adminComment = req.body?.adminComment || '';
+
+  // Kategori/kampanya başlıklarını ekle
+  const catRow = d.category_id
+    ? db.prepare('SELECT title FROM categories WHERE id=?').get(d.category_id) : null;
+  const campRow = d.campaign_id
+    ? db.prepare('SELECT title FROM campaigns WHERE id=?').get(d.campaign_id) : null;
+
+  const donationWithTitles = {
+    ...d,
+    admin_comment: adminComment,
+    approved_at: new Date().toISOString(),
+    category_title: catRow?.title || null,
+    campaign_title: campRow?.title || null,
+  };
+
+  // Site ayarlarını al
+  const settingRows = db.prepare('SELECT key,value FROM settings').all();
+  const settings = {};
+  settingRows.forEach(r => settings[r.key] = r.value);
+
+  try {
+    const pdfBuffer = await generateReceiptPDF(donationWithTitles, settings);
+    const receiptName = `makbuz-${id}-${Date.now()}.pdf`;
+    fs.writeFileSync(path.join(uploadDir, receiptName), pdfBuffer);
+
+    db.prepare('UPDATE donations SET status=?, approved_at=CURRENT_TIMESTAMP, receipt_file=?, admin_comment=? WHERE id=?')
+      .run('approved', `/uploads/${receiptName}`, adminComment, id);
+
+    if (d.user_email) {
+      mailerSend(d.user_email, 'Bağışınız Onaylandı',
+        `<p>Sayın ${d.user_name},</p><p>${d.amount} TL tutarındaki bağışınız onaylanmıştır. PDF makbuzunuza profil sayfanızdaki "Makbuzlarım" bölümünden ulaşabilirsiniz.</p><p>Hayır Limanı Yardım Derneği</p>`);
+    }
+    if (d.campaign_id) {
+      db.prepare('UPDATE campaigns SET raised=raised+?, donor_count=donor_count+1 WHERE id=?').run(d.amount, d.campaign_id);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('PDF makbuz oluşturma hatası:', err);
+    res.status(500).json({ error: 'Makbuz oluşturulamadı: ' + err.message });
   }
-  if (d.campaign_id) {
-    db.prepare('UPDATE campaigns SET raised=raised+?, donor_count=donor_count+1 WHERE id=?').run(d.amount, d.campaign_id);
-  }
-  res.json({ ok: true });
 });
 
 app.post('/api/admin/donations/:id/reject', requireAdmin, (req, res) => {

@@ -63,8 +63,7 @@ function renderHeader() {
     <div class="header">
       <div class="container header-inner">
         <a href="/" class="logo">
-          <span class="logo-mark">⚓</span>
-          <span class="logo-text">${s.site_title || 'Hayır Limanı'}<small>Derneği</small></span>
+          <img src="/images/logo.png" alt="Hayır Limanı Yardım Derneği" class="logo-img" />
         </a>
         <nav class="main-nav" id="main-nav">
           <a href="/">Anasayfa</a>
@@ -145,9 +144,8 @@ function renderFooter() {
     <div class="footer-main">
       <div class="container footer-grid">
         <div class="footer-about">
-          <div class="logo" style="color:#fff">
-            <span class="logo-mark">⚓</span>
-            <span class="logo-text">${s.site_title || 'Hayır Limanı'}<small style="color:rgba(255,255,255,.6)">Derneği</small></span>
+          <div>
+            <img src="/images/logo.png" alt="Hayır Limanı Yardım Derneği" class="logo-img logo-img-footer" />
           </div>
           <p style="margin-top:16px">${s.about_body ? s.about_body.slice(0, 200) + '...' : ''}</p>
           <div class="footer-socials">

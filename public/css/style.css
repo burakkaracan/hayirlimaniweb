@@ -1,22 +1,22 @@
 /* ===== Hayır Limanı Derneği - Brand Styles ===== */
 :root {
-  --brand: #136b4a;
-  --brand-dark: #0d4d36;
-  --brand-light: #1f8a62;
-  --accent: #c9a063;
-  --accent-dark: #a98448;
-  --bg: #f7f5ef;
+  --brand: #1a3d5c;
+  --brand-dark: #0d2b42;
+  --brand-light: #2d5a7a;
+  --accent: #c41230;
+  --accent-dark: #a00e26;
+  --bg: #f5f7fa;
   --surface: #ffffff;
-  --text: #1a2e25;
-  --muted: #607670;
-  --border: #e6e2d7;
+  --text: #1a2535;
+  --muted: #5a6a7e;
+  --border: #dde3eb;
   --danger: #c43b3b;
   --success: #2e8a4e;
   --radius: 12px;
   --radius-lg: 20px;
-  --shadow-sm: 0 2px 6px rgba(13,77,54,.06);
-  --shadow: 0 8px 24px rgba(13,77,54,.1);
-  --shadow-lg: 0 16px 40px rgba(13,77,54,.15);
+  --shadow-sm: 0 2px 6px rgba(13,43,66,.07);
+  --shadow: 0 8px 24px rgba(13,43,66,.12);
+  --shadow-lg: 0 16px 40px rgba(13,43,66,.18);
   --container: 1200px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -90,11 +90,14 @@ h3 { font-size: 1.25rem; }
   display: flex; align-items: center; gap: 12px;
   font-weight: 800; color: var(--brand-dark); font-size: 1.15rem;
 }
-.logo-mark {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand) 0%, var(--brand-light) 100%);
-  display: grid; place-items: center; color: #fff; font-size: 1.6rem;
-  box-shadow: var(--shadow-sm);
+.logo-img {
+  height: 52px; width: auto; display: block;
+  object-fit: contain;
+}
+.logo-img-footer {
+  height: 44px;
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
 }
 .logo-text { line-height: 1.1; }
 .logo-text small { display: block; font-size: .7rem; color: var(--muted); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; }
@@ -143,7 +146,7 @@ h3 { font-size: 1.25rem; }
 
 /* ===== Search Overlay ===== */
 .search-overlay {
-  position: fixed; inset: 0; background: rgba(13,77,54,.95);
+  position: fixed; inset: 0; background: rgba(13,43,66,.95);
   display: none; align-items: flex-start; justify-content: center;
   padding-top: 15vh; z-index: 200;
 }
@@ -167,7 +170,7 @@ h3 { font-size: 1.25rem; }
 .hero { position: relative; }
 .hero-slider {
   position: relative; height: clamp(420px, 60vh, 600px); overflow: hidden;
-  background: #0d4d36;
+  background: #0d2b42;
 }
 .hero-slide {
   position: absolute; inset: 0; opacity: 0; transition: opacity .8s;
@@ -176,7 +179,7 @@ h3 { font-size: 1.25rem; }
 .hero-slide.active { opacity: 1; }
 .hero-slide::after {
   content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(13,77,54,.85), rgba(13,77,54,.45));
+  background: linear-gradient(90deg, rgba(13,43,66,.85), rgba(13,43,66,.45));
 }
 .hero-content {
   position: relative; z-index: 2; height: 100%;
@@ -535,7 +538,7 @@ tbody tr:hover { background: #fafaf7; }
 }
 
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(13,77,54,.6); display: none;
+  position: fixed; inset: 0; background: rgba(13,43,66,.6); display: none;
   align-items: center; justify-content: center; z-index: 300; padding: 20px;
 }
 .modal-backdrop.open { display: flex; }
