@@ -575,10 +575,15 @@ tbody tr:hover { background: #fafaf7; }
 .admin-sidebar .logo-text small { color: rgba(255,255,255,.6); }
 .admin-nav { display: flex; flex-direction: column; gap: 4px; }
 .admin-nav a {
-  padding: 12px 16px; border-radius: 8px; color: rgba(255,255,255,.85);
-  font-weight: 600; font-size: .9rem;
+  padding: 10px 14px; border-radius: 8px; color: rgba(255,255,255,.7);
+  font-weight: 500; font-size: .88rem;
+  display: flex; align-items: center; gap: 10px;
 }
-.admin-nav a:hover, .admin-nav a.active { background: var(--brand); color: #fff; }
+.admin-nav a svg { flex-shrink: 0; opacity: 0.45; transition: opacity .15s; }
+.admin-nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
+.admin-nav a:hover svg { opacity: 1; }
+.admin-nav a.active { background: var(--brand); color: #fff; }
+.admin-nav a.active svg { opacity: 1; }
 .admin-main { padding: 30px; background: var(--bg); }
 .admin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }

@@ -153,18 +153,20 @@ app.post('/api/subscribe', (req, res) => {
 
 // ---------- Donations ----------
 app.post('/api/donations', (req, res) => {
-  const { amount, category_id, campaign_id, note, name, email } = req.body || {};
+  const { amount, category_id, campaign_id, note, name, email, phone } = req.body || {};
   const amt = parseFloat(amount);
   if (!amt || amt <= 0) return res.status(400).json({ error: 'Geçerli bir tutar giriniz' });
   let userId = req.session.userId || null;
-  let uName = name, uEmail = email;
+  let uName = name, uEmail = email, uPhone = phone;
   if (userId) {
-    const u = db.prepare('SELECT name,email FROM users WHERE id=?').get(userId);
-    uName = u.name; uEmail = u.email;
+    const u = db.prepare('SELECT name,email,phone FROM users WHERE id=?').get(userId);
+    uName = u.name; uEmail = u.email; uPhone = u.phone || phone;
+    if (!u.phone && phone) db.prepare('UPDATE users SET phone=? WHERE id=?').run(phone, userId);
   }
-  const info = db.prepare(`INSERT INTO donations(user_id,user_name,user_email,category_id,campaign_id,amount,note)
-    VALUES(?,?,?,?,?,?,?)`)
-    .run(userId, uName || 'Misafir', uEmail || '', category_id || null, campaign_id || null, amt, note || '');
+  if (!uPhone) return res.status(400).json({ error: 'Telefon numarası zorunludur' });
+  const info = db.prepare(`INSERT INTO donations(user_id,user_name,user_email,user_phone,category_id,campaign_id,amount,note)
+    VALUES(?,?,?,?,?,?,?,?)`)
+    .run(userId, uName || 'Misafir', uEmail || '', uPhone, category_id || null, campaign_id || null, amt, note || '');
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -313,19 +315,23 @@ app.post('/api/admin/donations/:id/reject', requireAdmin, (req, res) => {
 });
 
 // categories CRUD
+app.get('/api/admin/categories', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM categories ORDER BY COALESCE(parent_id,id), sort_order, id').all());
+});
 app.post('/api/admin/categories', requireAdmin, (req, res) => {
-  const { slug, title, icon, description, price, sort_order, active } = req.body;
-  const info = db.prepare('INSERT INTO categories(slug,title,icon,description,price,sort_order,active) VALUES(?,?,?,?,?,?,?)')
-    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1);
+  const { slug, title, icon, description, price, sort_order, active, parent_id } = req.body;
+  const info = db.prepare('INSERT INTO categories(slug,title,icon,description,price,sort_order,active,parent_id) VALUES(?,?,?,?,?,?,?,?)')
+    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/categories/:id', requireAdmin, (req, res) => {
-  const { slug, title, icon, description, price, sort_order, active } = req.body;
-  db.prepare('UPDATE categories SET slug=?,title=?,icon=?,description=?,price=?,sort_order=?,active=? WHERE id=?')
-    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, req.params.id);
+  const { slug, title, icon, description, price, sort_order, active, parent_id } = req.body;
+  db.prepare('UPDATE categories SET slug=?,title=?,icon=?,description=?,price=?,sort_order=?,active=?,parent_id=? WHERE id=?')
+    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null, req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/categories/:id', requireAdmin, (req, res) => {
+  db.prepare('UPDATE categories SET parent_id=NULL WHERE parent_id=?').run(req.params.id);
   db.prepare('DELETE FROM categories WHERE id=?').run(req.params.id);
   res.json({ ok: true });
 });

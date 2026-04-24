@@ -45,9 +45,20 @@
           <label>Açıklama (opsiyonel)</label>
           <input type="text" id="note" placeholder="Açıklama kısmına “Bağış” yazabilirsiniz" />
         </div>
-        <div id="guest-fields" class="grid-2 hidden">
-          <div class="form-group"><label>Ad Soyad</label><input type="text" id="gname" /></div>
-          <div class="form-group"><label>E-posta</label><input type="email" id="gemail" /></div>
+        <div id="guest-fields" class="hidden">
+          <div class="grid-2">
+            <div class="form-group"><label>Ad Soyad *</label><input type="text" id="gname" /></div>
+            <div class="form-group"><label>E-posta *</label><input type="email" id="gemail" /></div>
+          </div>
+          <div class="form-group">
+            <label>Telefon (WhatsApp) *</label>
+            <input type="tel" id="gphone" placeholder="05XX XXX XX XX" />
+          </div>
+        </div>
+        <div id="phone-field" class="form-group hidden">
+          <label>Telefon (WhatsApp) *</label>
+          <input type="tel" id="uphone" placeholder="05XX XXX XX XX" />
+          <small class="muted">WhatsApp bilgilendirmesi için gereklidir, profilinize kaydedilecektir.</small>
         </div>
         <p class="muted" style="font-size:.85rem;">
           💡 Bağış işleminizi gerçekleştirdikten sonra aşağıdaki <strong>Bağış Yaptım</strong> butonuna basarak bildirimde bulunun. Ekibimiz doğrulamayı yapıp makbuzunuzu e-posta ile iletecektir.
@@ -74,7 +85,20 @@
 
       const cats = await api('/api/categories');
       const sel = document.getElementById('category');
-      sel.innerHTML = '<option value="">Genel Bağış</option>' + cats.map(c => `<option value="${c.id}" data-slug="${c.slug}" data-price="${c.price}">${c.title}</option>`).join('');
+      const parents = cats.filter(c => !c.parent_id);
+      const childrenOf = id => cats.filter(c => c.parent_id === id);
+      let opts = '<option value="">Genel Bağış</option>';
+      parents.forEach(p => {
+        const subs = childrenOf(p.id);
+        if (subs.length) {
+          opts += `<optgroup label="${p.icon ? p.icon + ' ' : ''}${p.title}">`;
+          subs.forEach(s => { opts += `<option value="${s.id}" data-slug="${s.slug}" data-price="${s.price}">${s.title}</option>`; });
+          opts += '</optgroup>';
+        } else {
+          opts += `<option value="${p.id}" data-slug="${p.slug}" data-price="${p.price}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
+        }
+      });
+      sel.innerHTML = opts;
 
       const katParam = qs('kat');
       if (katParam) {
@@ -89,6 +113,8 @@
       if (!currentUser) {
         document.getElementById('guest-fields').classList.remove('hidden');
         document.getElementById('login-notice').classList.remove('hidden');
+      } else if (!currentUser.phone) {
+        document.getElementById('phone-field').classList.remove('hidden');
       }
     });
 
@@ -106,9 +132,14 @@
       if (cat) payload.category_id = parseInt(cat);
       if (camp) payload.campaign_id = parseInt(camp);
       if (!currentUser) {
-        payload.name = document.getElementById('gname').value;
-        payload.email = document.getElementById('gemail').value;
-        if (!payload.name || !payload.email) return alert('Misafir bağış için Ad Soyad ve e-posta gereklidir.');
+        payload.name = document.getElementById('gname').value.trim();
+        payload.email = document.getElementById('gemail').value.trim();
+        payload.phone = document.getElementById('gphone').value.trim();
+        if (!payload.name || !payload.email) return alert('Ad Soyad ve e-posta zorunludur.');
+        if (!payload.phone) return alert('WhatsApp bilgilendirmesi için telefon numarası zorunludur.');
+      } else if (!currentUser.phone) {
+        payload.phone = document.getElementById('uphone').value.trim();
+        if (!payload.phone) return alert('WhatsApp bilgilendirmesi için telefon numarası zorunludur.');
       }
       const r = await api('/api/donations', { method: 'POST', body: payload });
       if (r.ok) location.href = '/bagis-bildirimi.html?id=' + r.id;

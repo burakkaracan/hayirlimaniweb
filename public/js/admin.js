@@ -22,6 +22,24 @@ window.addEventListener('app-ready', async () => {
   startAdminPolling();
 });
 
+const _si = (paths) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const NAV_ICONS = {
+  dashboard:  _si('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  donations:  _si('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+  users:      _si('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  messages:   _si('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+  categories: _si('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
+  campaigns:  _si('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'),
+  activities: _si('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
+  hero:       _si('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'),
+  boards:     _si('<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
+  documents:  _si('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),
+  menus:      _si('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
+  bulk:       _si('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/>'),
+  settings:   _si('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+  external:   _si('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
+};
+
 function renderShell() {
   document.getElementById('admin-root').innerHTML = `
     <div class="admin-shell">
@@ -30,20 +48,20 @@ function renderShell() {
           <img src="/images/logo.png" alt="Hayır Limanı" class="logo-img" style="filter:brightness(0) invert(1); max-height:40px;" />
         </a>
         <nav class="admin-nav">
-          <a href="#dashboard" data-s="dashboard">📊 Panel</a>
-          <a href="#donations" data-s="donations">💚 Bağış Onayları</a>
-          <a href="#users" data-s="users">👥 Bağışçılar</a>
-          <a href="#messages" data-s="messages">💬 Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
-          <a href="#categories" data-s="categories">🏷️ Bağış Kategorileri</a>
-          <a href="#campaigns" data-s="campaigns">📣 Kampanyalar</a>
-          <a href="#activities" data-s="activities">🌍 Faaliyetler</a>
-          <a href="#hero" data-s="hero">🎞️ Hero Slider</a>
-          <a href="#boards" data-s="boards">🏛️ Yetkili Kurullar</a>
-          <a href="#documents" data-s="documents">📄 Belgeler</a>
-          <a href="#menus" data-s="menus">📋 Menü Yönetimi</a>
-          <a href="#bulk" data-s="bulk">📧 Toplu Mail</a>
-          <a href="#settings" data-s="settings">⚙️ Site Ayarları</a>
-          <a href="/" target="_blank">↗ Siteye Dön</a>
+          <a href="#dashboard" data-s="dashboard">${NAV_ICONS.dashboard} Panel</a>
+          <a href="#donations" data-s="donations">${NAV_ICONS.donations} Bağış Onayları</a>
+          <a href="#users" data-s="users">${NAV_ICONS.users} Bağışçılar</a>
+          <a href="#messages" data-s="messages">${NAV_ICONS.messages} Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
+          <a href="#categories" data-s="categories">${NAV_ICONS.categories} Bağış Kategorileri</a>
+          <a href="#campaigns" data-s="campaigns">${NAV_ICONS.campaigns} Kampanyalar</a>
+          <a href="#activities" data-s="activities">${NAV_ICONS.activities} Faaliyetler</a>
+          <a href="#hero" data-s="hero">${NAV_ICONS.hero} Hero Slider</a>
+          <a href="#boards" data-s="boards">${NAV_ICONS.boards} Yetkili Kurullar</a>
+          <a href="#documents" data-s="documents">${NAV_ICONS.documents} Belgeler</a>
+          <a href="#menus" data-s="menus">${NAV_ICONS.menus} Menü Yönetimi</a>
+          <a href="#bulk" data-s="bulk">${NAV_ICONS.bulk} Toplu Mail</a>
+          <a href="#settings" data-s="settings">${NAV_ICONS.settings} Site Ayarları</a>
+          <a href="/" target="_blank">${NAV_ICONS.external} Siteye Dön</a>
         </nav>
       </aside>
       <main class="admin-main" id="admin-main">
@@ -81,12 +99,13 @@ const sections = {
         <h3>Bekleyen Bağış Bildirimleri (${recent.length})</h3>
         ${recent.length === 0 ? '<div class="empty">Bekleyen bildirim yok.</div>' : `
           <div class="table-wrap"><table>
-            <thead><tr><th>Tarih</th><th>Bağışçı</th><th>Tutar</th><th>Kategori</th><th>İşlem</th></tr></thead>
+            <thead><tr><th>Tarih</th><th>Bağışçı</th><th>Telefon</th><th>Tutar</th><th>Kategori</th><th>İşlem</th></tr></thead>
             <tbody>
               ${recent.slice(0, 10).map(d => `
                 <tr>
                   <td>${new Date(d.created_at).toLocaleString('tr-TR')}</td>
                   <td><strong>${escapeHtml(d.user_name)}</strong><div class="muted" style="font-size:.8rem">${escapeHtml(d.user_email)}</div></td>
+                  <td>${d.user_phone ? `<a href="https://wa.me/${d.user_phone.replace(/\D/g,'')}" target="_blank" rel="noopener" style="color:#25D366;font-weight:600">${escapeHtml(d.user_phone)}</a>` : '<span class="muted">—</span>'}</td>
                   <td><strong>${formatTL(d.amount)}</strong></td>
                   <td>${d.category_title || d.campaign_title || 'Genel'}</td>
                   <td>
@@ -153,37 +172,7 @@ const sections = {
     await renderMsgList();
   },
 
-  async categories() { await renderCrudSection({
-    key: 'categories', title: 'Bağış Kategorileri',
-    fields: [
-      { k: 'title', label: 'Başlık', wide: true },
-      { k: 'slug', label: 'Slug' },
-      { k: 'icon', label: 'İkon (emoji)' },
-      { k: 'price', label: 'Birim Tutar (₺)', type: 'number' },
-      { k: 'sort_order', label: 'Sıra', type: 'number' },
-      { k: 'description', label: 'Açıklama', type: 'textarea', wide: true },
-      { k: 'active', label: 'Aktif', type: 'checkbox' },
-    ],
-    list: (rows) => `
-      <div class="table-wrap"><table>
-        <thead><tr><th>İkon</th><th>Başlık</th><th>Slug</th><th>Tutar</th><th>Sıra</th><th>Aktif</th><th>İşlem</th></tr></thead>
-        <tbody>
-          ${rows.map(r => `
-            <tr>
-              <td style="font-size:1.5rem">${r.icon || ''}</td>
-              <td><strong>${r.title}</strong></td>
-              <td class="muted">${r.slug}</td>
-              <td>${formatTL(r.price)}</td>
-              <td>${r.sort_order}</td>
-              <td>${r.active ? '✅' : '❌'}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" onclick='editItem("categories", ${JSON.stringify(r)})'>Düzenle</button>
-                <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteItem('categories', ${r.id})">Sil</button>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table></div>`
-  }); },
+  async categories() { await renderCategoriesSection(); },
 
   async campaigns() { await renderCrudSection({
     key: 'campaigns', title: 'Kampanyalar',
@@ -404,6 +393,140 @@ const sections = {
   },
 };
 
+// ===== Categories (hierarchical) =====
+async function renderCategoriesSection() {
+  const rows = await api('/api/admin/categories');
+  const parents = rows.filter(r => !r.parent_id);
+  const childrenOf = id => rows.filter(r => r.parent_id === id);
+
+  const tableRows = parents.map(p => {
+    const subs = childrenOf(p.id);
+    const pRow = `
+      <tr style="background:#f8fafc">
+        <td style="font-size:1.4rem">${p.icon || ''}</td>
+        <td><strong>${escapeHtml(p.title)}</strong></td>
+        <td class="muted" style="font-size:.8rem">${escapeHtml(p.slug)}</td>
+        <td>${formatTL(p.price)}</td>
+        <td>${p.sort_order}</td>
+        <td>${p.active ? '✅' : '❌'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick='openCategoryForm(null,${JSON.stringify(p).replace(/'/g,"&#39;")})'>Düzenle</button>
+          <button class="btn btn-outline btn-sm" onclick="openCategoryForm(${p.id},null)" style="color:var(--brand)">+ Alt</button>
+          <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteCategoryItem(${p.id})">Sil</button>
+        </td>
+      </tr>`;
+    const subRows = subs.map(s => `
+      <tr>
+        <td style="font-size:1.2rem;padding-left:28px">${s.icon || ''}</td>
+        <td style="padding-left:28px"><span style="color:var(--muted);margin-right:4px">↳</span>${escapeHtml(s.title)}</td>
+        <td class="muted" style="font-size:.8rem">${escapeHtml(s.slug)}</td>
+        <td>${formatTL(s.price)}</td>
+        <td>${s.sort_order}</td>
+        <td>${s.active ? '✅' : '❌'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-outline btn-sm" onclick='openCategoryForm(${p.id},${JSON.stringify(s).replace(/'/g,"&#39;")})'>Düzenle</button>
+          <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteCategoryItem(${s.id})">Sil</button>
+        </td>
+      </tr>`).join('');
+    return pRow + subRows;
+  }).join('');
+
+  // Orphan subcategories (parent deleted)
+  const orphans = rows.filter(r => r.parent_id && !parents.find(p => p.id === r.parent_id));
+  const orphanRows = orphans.map(s => `
+    <tr>
+      <td style="font-size:1.2rem">${s.icon || ''}</td>
+      <td><em class="muted">[Üst kategori yok]</em> ${escapeHtml(s.title)}</td>
+      <td class="muted" style="font-size:.8rem">${escapeHtml(s.slug)}</td>
+      <td>${formatTL(s.price)}</td>
+      <td>${s.sort_order}</td>
+      <td>${s.active ? '✅' : '❌'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick='openCategoryForm(null,${JSON.stringify(s).replace(/'/g,"&#39;")})'>Düzenle</button>
+        <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteCategoryItem(${s.id})">Sil</button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('admin-main').innerHTML = `
+    <div class="admin-head">
+      <h2>Bağış Kategorileri</h2>
+      <button class="btn btn-primary" onclick="openCategoryForm(null,null)">+ Yeni Ana Kategori</button>
+    </div>
+    <div class="admin-section">
+      ${rows.length === 0 ? '<div class="empty">Henüz kategori yok</div>' : `
+        <div class="table-wrap"><table>
+          <thead><tr><th>İkon</th><th>Başlık</th><th>Slug</th><th>Tutar</th><th>Sıra</th><th>Aktif</th><th>İşlem</th></tr></thead>
+          <tbody>${tableRows}${orphanRows}</tbody>
+        </table></div>`}
+    </div>`;
+  window._catRows = rows;
+}
+
+function openCategoryForm(parentId, row) {
+  const parents = (window._catRows || []).filter(r => !r.parent_id);
+  const isEdit = !!row;
+  const r = row || {};
+  const currentParent = isEdit ? (r.parent_id || '') : (parentId || '');
+
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <h3>${isEdit ? 'Kategori Düzenle' : (parentId ? 'Alt Kategori Ekle' : 'Yeni Ana Kategori')}</h3>
+    <div class="data-form" id="cat-form">
+      <div class="wide">
+        <label>Üst Kategori</label>
+        <select name="parent_id">
+          <option value="">— Ana Kategori (üst kategori yok) —</option>
+          ${parents.filter(p => !isEdit || p.id !== r.id).map(p =>
+            `<option value="${p.id}" ${currentParent==p.id?'selected':''}>${escapeHtml(p.title)}</option>`
+          ).join('')}
+        </select>
+      </div>
+      <div><label>Başlık *</label><input type="text" name="title" value="${escapeHtml(r.title||'')}" /></div>
+      <div><label>Slug</label><input type="text" name="slug" value="${escapeHtml(r.slug||'')}" placeholder="otomatik oluşturulur" /></div>
+      <div><label>İkon (emoji)</label><input type="text" name="icon" value="${escapeHtml(r.icon||'')}" placeholder="🎁" /></div>
+      <div><label>Birim Tutar (₺)</label><input type="number" name="price" value="${r.price||0}" /></div>
+      <div><label>Sıra</label><input type="number" name="sort_order" value="${r.sort_order||0}" /></div>
+      <div class="wide"><label>Açıklama</label><textarea name="description" rows="2">${escapeHtml(r.description||'')}</textarea></div>
+      <div class="wide"><label><input type="checkbox" name="active" ${(r.active??1)?'checked':''} /> Aktif</label></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="saveCategoryForm(${r.id||'null'})">Kaydet</button>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+async function saveCategoryForm(id) {
+  const form = document.getElementById('cat-form');
+  const get = name => form.querySelector(`[name="${name}"]`);
+  let slug = get('slug').value.trim();
+  const title = get('title').value.trim();
+  if (!title) return alert('Başlık zorunludur');
+  if (!slug) slug = title.toLowerCase()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+    .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  const data = {
+    title, slug,
+    icon: get('icon').value.trim(),
+    price: parseFloat(get('price').value) || 0,
+    sort_order: parseInt(get('sort_order').value) || 0,
+    description: get('description').value.trim(),
+    active: get('active').checked ? 1 : 0,
+    parent_id: get('parent_id').value ? parseInt(get('parent_id').value) : null,
+  };
+  const url = id ? `/api/admin/categories/${id}` : '/api/admin/categories';
+  const r = await api(url, { method: id ? 'PUT' : 'POST', body: data });
+  if (r.ok) { closeModal(); await renderCategoriesSection(); }
+  else alert(r.error || 'Kaydetme başarısız');
+}
+
+async function deleteCategoryItem(id) {
+  if (!confirm('Bu kategoriyi silmek istediğinize emin misiniz?\n(Alt kategoriler varsa bağlantısı kaldırılır, silinmez)')) return;
+  await api(`/api/admin/categories/${id}`, { method: 'DELETE' });
+  await renderCategoriesSection();
+}
+
 async function renderCrudSection({ key, title, fields, list, publicEndpoint }) {
   const rows = await api(publicEndpoint || '/api/' + key);
   adminState.data[key] = rows;
@@ -511,12 +634,13 @@ function renderDonationList(filter) {
   document.getElementById('donations-list').innerHTML = rows.length === 0
     ? '<div class="empty">Kayıt yok</div>'
     : `<div class="table-wrap"><table>
-      <thead><tr><th>Tarih</th><th>Bağışçı</th><th>Tutar</th><th>Kategori</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <thead><tr><th>Tarih</th><th>Bağışçı</th><th>Telefon</th><th>Tutar</th><th>Kategori</th><th>Durum</th><th>İşlem</th></tr></thead>
       <tbody>
         ${rows.map(d => `
           <tr>
             <td>${new Date(d.created_at).toLocaleString('tr-TR')}</td>
             <td><strong>${escapeHtml(d.user_name)}</strong><div class="muted" style="font-size:.8rem">${escapeHtml(d.user_email)}</div>${d.note ? `<div class="muted" style="font-size:.75rem">📝 ${escapeHtml(d.note)}</div>` : ''}</td>
+            <td>${d.user_phone ? `<a href="https://wa.me/${d.user_phone.replace(/\D/g,'')}" target="_blank" rel="noopener" title="WhatsApp'ta Yaz" style="color:#25D366;font-weight:600">${escapeHtml(d.user_phone)}</a>` : '<span class="muted">—</span>'}</td>
             <td><strong>${formatTL(d.amount)}</strong></td>
             <td>${d.category_title || d.campaign_title || 'Genel'}</td>
             <td><span class="badge ${d.status}">${{ pending: 'Bekliyor', approved: 'Onaylı', rejected: 'Red' }[d.status]}</span></td>
