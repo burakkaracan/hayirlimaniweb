@@ -193,6 +193,9 @@ app.post('/api/messages', (req, res) => {
   }
   const info = db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body,file_url) VALUES(?,?,?,?,?,?)')
     .run(userId, n || 'Misafir', e || '', 0, body || '', file_url || null);
+  const threadKey = String(userId || e || n || 'Misafir');
+  ensureThread(threadKey);
+  autoLabelThread(threadKey, userId, e);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -442,13 +445,36 @@ app.post('/api/admin/settings', requireAdmin, (req, res) => {
 });
 
 // messages (admin chat)
-app.get('/api/admin/messages', requireAdmin, (_req, res) => {
+function ensureThread(key) {
+  db.prepare('INSERT OR IGNORE INTO msg_threads(thread_key) VALUES(?)').run(String(key));
+}
+function autoLabelThread(threadKey, userId, email) {
+  const t = db.prepare('SELECT label_id FROM msg_threads WHERE thread_key=?').get(String(threadKey));
+  if (t?.label_id) return;
+  const bLabel = db.prepare("SELECT id FROM msg_labels WHERE name='Bağışçı'").get();
+  if (!bLabel) return;
+  let has = userId ? !!db.prepare('SELECT id FROM donations WHERE user_id=? LIMIT 1').get(userId) : false;
+  if (!has && email) has = !!db.prepare('SELECT id FROM donations WHERE user_email=? LIMIT 1').get(email);
+  if (has) db.prepare('UPDATE msg_threads SET label_id=? WHERE thread_key=? AND label_id IS NULL').run(bLabel.id, String(threadKey));
+}
+
+app.get('/api/admin/messages', requireAdmin, (req, res) => {
+  const archived = req.query.archived === '1' ? 1 : 0;
+  const labelId = req.query.label ? parseInt(req.query.label) : null;
+  const archiveFilter = archived ? 'AND t.archived=1' : 'AND (t.archived IS NULL OR t.archived=0)';
+  const params = [];
+  let labelFilter = '';
+  if (labelId) { labelFilter = 'AND t.label_id=?'; params.push(labelId); }
   const threads = db.prepare(`
-    SELECT name, email, user_id, MAX(created_at) as last_at,
-      SUM(CASE WHEN read=0 AND from_admin=0 THEN 1 ELSE 0 END) as unread
-    FROM messages
-    GROUP BY COALESCE(user_id, email, name)
-    ORDER BY last_at DESC LIMIT 200`).all();
+    SELECT m.name, m.email, m.user_id, MAX(m.created_at) as last_at,
+      SUM(CASE WHEN m.read=0 AND m.from_admin=0 THEN 1 ELSE 0 END) as unread,
+      t.label_id, t.archived, l.name as label_name, l.color as label_color
+    FROM messages m
+    LEFT JOIN msg_threads t ON t.thread_key=CAST(COALESCE(m.user_id,m.email,m.name) AS TEXT)
+    LEFT JOIN msg_labels l ON l.id=t.label_id
+    WHERE 1=1 ${archiveFilter} ${labelFilter}
+    GROUP BY COALESCE(m.user_id,m.email,m.name)
+    ORDER BY last_at DESC LIMIT 200`).all(...params);
   res.json(threads);
 });
 app.get('/api/admin/messages/:key', requireAdmin, (req, res) => {
@@ -461,6 +487,38 @@ app.post('/api/admin/messages/reply', requireAdmin, (req, res) => {
   const { user_id, email, name, body, file_url } = req.body;
   db.prepare('INSERT INTO messages(user_id,name,email,from_admin,body,file_url,read) VALUES(?,?,?,?,?,?,1)')
     .run(user_id || null, name || '', email || '', 1, body || '', file_url || null);
+  res.json({ ok: true });
+});
+app.patch('/api/admin/messages/:key/label', requireAdmin, (req, res) => {
+  const key = req.params.key;
+  ensureThread(key);
+  db.prepare('UPDATE msg_threads SET label_id=? WHERE thread_key=?').run(req.body.label_id || null, key);
+  res.json({ ok: true });
+});
+app.patch('/api/admin/messages/:key/archive', requireAdmin, (req, res) => {
+  const key = req.params.key;
+  ensureThread(key);
+  db.prepare('UPDATE msg_threads SET archived=? WHERE thread_key=?').run(req.body.archived ? 1 : 0, key);
+  res.json({ ok: true });
+});
+app.delete('/api/admin/messages/:key', requireAdmin, (req, res) => {
+  const k = req.params.key;
+  db.prepare('DELETE FROM messages WHERE CAST(COALESCE(user_id,email,name) AS TEXT)=?').run(k);
+  db.prepare('DELETE FROM msg_threads WHERE thread_key=?').run(k);
+  res.json({ ok: true });
+});
+app.get('/api/admin/msg-labels', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM msg_labels ORDER BY id').all());
+});
+app.post('/api/admin/msg-labels', requireAdmin, (req, res) => {
+  const { name, color } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'İsim gerekli' });
+  const info = db.prepare('INSERT INTO msg_labels(name,color) VALUES(?,?)').run(name.trim(), color || '#1a3d5c');
+  res.json({ id: info.lastInsertRowid });
+});
+app.delete('/api/admin/msg-labels/:id', requireAdmin, (req, res) => {
+  db.prepare('UPDATE msg_threads SET label_id=NULL WHERE label_id=?').run(req.params.id);
+  db.prepare('DELETE FROM msg_labels WHERE id=?').run(req.params.id);
   res.json({ ok: true });
 });
 

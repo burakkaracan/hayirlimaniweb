@@ -17,7 +17,8 @@
       "Bash(node --check public/js/admin.js)",
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(netstat -ano)",
-      "Bash(taskkill //F //PID 2876)"
+      "Bash(taskkill //F //PID 2876)",
+      "Bash(node *)"
     ]
   }
 }

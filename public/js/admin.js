@@ -5,6 +5,9 @@ const ADMIN_EMOJIS = ['😊','😂','❤️','👍','🙏','😢','💪','🤔',
 let _adminBadgeInterval = null;
 let _adminAttachFileUrl = null;
 let _currentThread = null;
+let _msgFilter = { label: null, archived: 0 };
+let _msgLabels = [];
+let _msgThreads = [];
 
 window.addEventListener('app-ready', async () => {
   if (!currentUser) { location.href = '/giris.html'; return; }
@@ -145,29 +148,9 @@ const sections = {
   },
 
   async messages() {
-    const threads = await api('/api/admin/messages');
-    document.getElementById('admin-main').innerHTML = `
-      <div class="admin-head"><h2>Mesajlar (Canlı Destek)</h2></div>
-      <div class="grid-2">
-        <div class="admin-section" style="margin-bottom:0;">
-          <h3>Konuşmalar</h3>
-          ${threads.length === 0 ? '<div class="empty">Mesaj yok</div>' : `
-            <div class="doc-list">
-              ${threads.map(t => `
-                <div class="doc-item" style="cursor:pointer" onclick="openThread('${escapeHtml(String(t.user_id || t.email || t.name))}', '${escapeHtml(t.name)}', '${escapeHtml(t.email || '')}', ${t.user_id || 'null'})">
-                  <div>
-                    <strong>${escapeHtml(t.name)}</strong>${t.unread > 0 ? ` <span class="badge" style="background:var(--danger);color:#fff">${t.unread}</span>` : ''}
-                    <div class="muted" style="font-size:.8rem">${escapeHtml(t.email || '-')} · ${new Date(t.last_at).toLocaleString('tr-TR')}</div>
-                  </div>
-                  <span>→</span>
-                </div>`).join('')}
-            </div>`}
-        </div>
-        <div class="admin-section" id="thread-panel" style="margin-bottom:0;">
-          <div class="empty">Soldan bir konuşma seçin</div>
-        </div>
-      </div>
-    `;
+    _msgLabels = await api('/api/admin/msg-labels');
+    _msgFilter = { label: null, archived: 0 };
+    await renderMsgList();
   },
 
   async categories() { await renderCrudSection({
@@ -572,15 +555,162 @@ async function updateTags(id, tags) {
 }
 
 // Messages
+async function renderMsgList() {
+  const { label, archived } = _msgFilter;
+  let url = '/api/admin/messages?archived=' + (archived ? '1' : '0');
+  if (label) url += '&label=' + label;
+  _msgThreads = await api(url);
+
+  const filterBar = `
+    <div class="msg-filter-bar">
+      <button class="msg-chip${!label && !archived ? ' active' : ''}" onclick="setMsgFilter(null,0)">Tümü</button>
+      ${_msgLabels.map(l => `
+        <button class="msg-chip${label==l.id && !archived ? ' active' : ''}"
+          onclick="setMsgFilter(${l.id},0)"
+          style="${label==l.id && !archived ? `background:${l.color};color:#fff;border-color:${l.color}` : `border-color:${l.color};color:${l.color}`}">
+          ${escapeHtml(l.name)}
+        </button>`).join('')}
+      <button class="msg-chip${archived ? ' active' : ''}" onclick="setMsgFilter(null,1)">📁 Arşiv</button>
+      <button class="btn btn-ghost btn-sm" onclick="toggleLabelManager()" style="margin-left:auto;font-size:.85rem">⚙ Kategoriler</button>
+    </div>
+    <div id="label-manager" style="display:none" class="admin-section" style="padding:12px;margin:0 0 12px;border:1px dashed var(--border)">
+      <h4 style="margin-bottom:10px">Kategori Yönetimi</h4>
+      <div id="label-list">
+        ${_msgLabels.map(l => `
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${l.color};flex-shrink:0"></span>
+            <span style="flex:1">${escapeHtml(l.name)}</span>
+            <button class="btn btn-sm" style="background:var(--danger);color:#fff;padding:3px 8px" onclick="deleteMsgLabel(${l.id})">Sil</button>
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;align-items:center">
+        <input id="new-label-name" placeholder="Yeni kategori adı" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:.9rem" />
+        <input id="new-label-color" type="color" value="#1565c0" title="Renk" style="width:36px;height:32px;padding:2px;border:1px solid var(--border);border-radius:6px;cursor:pointer" />
+        <button class="btn btn-primary btn-sm" onclick="addMsgLabel()">Ekle</button>
+      </div>
+    </div>`;
+
+  const threadList = _msgThreads.length === 0
+    ? '<div class="empty">Mesaj yok</div>'
+    : `<div class="doc-list">${_msgThreads.map(t => {
+        const key = String(t.user_id || t.email || t.name);
+        const labelBadge = t.label_name
+          ? `<span style="background:${t.label_color};color:#fff;border-radius:999px;padding:1px 7px;font-size:.7rem;white-space:nowrap">${escapeHtml(t.label_name)}</span>`
+          : '';
+        return `
+          <div class="doc-item msg-thread-item" style="cursor:pointer" onclick="openThread('${escapeHtml(key)}','${escapeHtml(t.name)}','${escapeHtml(t.email||'')}',${t.user_id||'null'})">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                <strong>${escapeHtml(t.name)}</strong>
+                ${t.unread > 0 ? `<span class="badge" style="background:var(--danger);color:#fff">${t.unread}</span>` : ''}
+                ${labelBadge}
+              </div>
+              <div class="muted" style="font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(t.email||'-')} · ${new Date(t.last_at).toLocaleString('tr-TR')}</div>
+            </div>
+            <div style="display:flex;gap:2px;flex-shrink:0" onclick="event.stopPropagation()">
+              <button class="btn btn-ghost btn-sm" onclick="toggleArchiveThread('${escapeHtml(key)}',${t.archived?0:1})" title="${t.archived?'Arşivden Çıkar':'Arşivle'}" style="padding:4px 6px">${t.archived?'📤':'📁'}</button>
+              <button class="btn btn-ghost btn-sm" onclick="deleteThread('${escapeHtml(key)}')" title="Sil" style="padding:4px 6px;color:var(--danger)">🗑</button>
+            </div>
+          </div>`;
+      }).join('')}</div>`;
+
+  const main = document.getElementById('admin-main');
+  const existingPanel = document.getElementById('thread-panel');
+  const panelHtml = existingPanel ? existingPanel.outerHTML : `<div class="admin-section" id="thread-panel" style="margin-bottom:0"><div class="empty">Soldan bir konuşma seçin</div></div>`;
+
+  main.innerHTML = `
+    <div class="admin-head"><h2>Mesajlar (Canlı Destek)</h2></div>
+    ${filterBar}
+    <div class="grid-2">
+      <div class="admin-section" style="margin-bottom:0">
+        <h3>Konuşmalar</h3>
+        ${threadList}
+      </div>
+      ${panelHtml}
+    </div>`;
+}
+
+async function setMsgFilter(labelId, archived) {
+  _msgFilter = { label: labelId, archived };
+  await renderMsgList();
+}
+
+function toggleLabelManager() {
+  const el = document.getElementById('label-manager');
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function addMsgLabel() {
+  const name = document.getElementById('new-label-name')?.value?.trim();
+  const color = document.getElementById('new-label-color')?.value || '#1565c0';
+  if (!name) return;
+  await api('/api/admin/msg-labels', { method: 'POST', body: { name, color } });
+  _msgLabels = await api('/api/admin/msg-labels');
+  await renderMsgList();
+  const lm = document.getElementById('label-manager');
+  if (lm) lm.style.display = 'block';
+}
+
+async function deleteMsgLabel(id) {
+  if (!confirm('Bu kategoriyi silmek istediğinize emin misiniz?')) return;
+  await api(`/api/admin/msg-labels/${id}`, { method: 'DELETE' });
+  _msgLabels = await api('/api/admin/msg-labels');
+  if (_msgFilter.label == id) _msgFilter.label = null;
+  await renderMsgList();
+  const lm = document.getElementById('label-manager');
+  if (lm) lm.style.display = 'block';
+}
+
+async function setThreadLabel(key, labelId) {
+  await api(`/api/admin/messages/${encodeURIComponent(key)}/label`, { method: 'PATCH', body: { label_id: labelId || null } });
+  const t = _msgThreads.find(x => String(x.user_id||x.email||x.name) === key);
+  if (t) {
+    t.label_id = labelId || null;
+    const l = _msgLabels.find(x => x.id == labelId);
+    t.label_name = l?.name || null;
+    t.label_color = l?.color || null;
+  }
+}
+
+async function toggleArchiveThread(key, archived) {
+  await api(`/api/admin/messages/${encodeURIComponent(key)}/archive`, { method: 'PATCH', body: { archived } });
+  await renderMsgList();
+}
+
+async function deleteThread(key) {
+  if (!confirm('Bu konuşmayı ve tüm mesajları silmek istediğinize emin misiniz?')) return;
+  await api(`/api/admin/messages/${encodeURIComponent(key)}`, { method: 'DELETE' });
+  if (_currentThread?.key === key) _currentThread = null;
+  await renderMsgList();
+}
+
 async function openThread(key, name, email, userId) {
   _currentThread = { key, userId, email, name };
   _adminAttachFileUrl = null;
   const rows = await api('/api/admin/messages/' + encodeURIComponent(key));
   const fileAccept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip';
+  const threadMeta = _msgThreads.find(t => String(t.user_id||t.email||t.name) === key);
+  const currentLabelId = threadMeta?.label_id || '';
+
+  const labelSelect = `
+    <select onchange="setThreadLabel('${escapeHtml(key)}', this.value)" style="font-size:.8rem;padding:3px 6px;border:1px solid var(--border);border-radius:6px;max-width:130px">
+      <option value="">— Kategori —</option>
+      ${_msgLabels.map(l => `<option value="${l.id}" ${currentLabelId==l.id?'selected':''}>${escapeHtml(l.name)}</option>`).join('')}
+    </select>`;
+
   document.getElementById('thread-panel').innerHTML = `
-    <h3>${escapeHtml(name)} ${email ? `<small class="muted">· ${escapeHtml(email)}</small>` : ''}</h3>
+    <div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="flex:1;min-width:0">
+        <h3 style="margin:0">${escapeHtml(name)} ${email ? `<small class="muted" style="font-size:.8rem">· ${escapeHtml(email)}</small>` : ''}</h3>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        ${labelSelect}
+        <button class="btn btn-ghost btn-sm" onclick="toggleArchiveThread('${escapeHtml(key)}',${threadMeta?.archived?0:1})" title="${threadMeta?.archived?'Arşivden Çıkar':'Arşivle'}" style="padding:5px 8px">${threadMeta?.archived?'📤 Arşivden Çıkar':'📁 Arşivle'}</button>
+        <button class="btn btn-sm" onclick="deleteThread('${escapeHtml(key)}')" style="background:var(--danger);color:#fff;padding:5px 8px">🗑 Sil</button>
+      </div>
+    </div>
     <div class="chat-thread" id="admin-chat-thread">
-      ${rows.map(m => `<div class="chat-msg ${m.from_admin ? 'admin' : 'user'}">${renderAdminMsgContent(m)}<div style="font-size:.65rem;opacity:.6;margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`).join('')}
+      ${rows.map(m => `<div class="chat-msg ${m.from_admin?'admin':'user'}">${renderAdminMsgContent(m)}<div style="font-size:.65rem;opacity:.6;margin-top:4px">${new Date(m.created_at).toLocaleString('tr-TR')}</div></div>`).join('')}
     </div>
     <div id="admin-emoji-panel" class="chat-emoji-panel" style="display:none;border-top:1px solid var(--border)">
       ${ADMIN_EMOJIS.map(em => `<button type="button" onclick="adminInsertEmoji('${em}')">${em}</button>`).join('')}
@@ -655,10 +785,15 @@ function renderAdminMsgContent(m) {
   let html = m.body ? escapeHtml(m.body) : '';
   if (m.file_url) {
     const ext = (m.file_url.split('.').pop() || '').toLowerCase();
+    const fname = escapeHtml(m.file_url.split('/').pop());
+    const dlBtn = `<a href="${escapeHtml(m.file_url)}" download title="İndir" style="margin-left:6px;font-size:.85rem;opacity:.8">⬇</a>`;
     if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
-      html += `<br><img src="${escapeHtml(m.file_url)}" class="chat-msg-img" alt="görsel">`;
+      html += `<br><img src="${escapeHtml(m.file_url)}" class="chat-msg-img" alt="görsel"><br>
+        <a href="${escapeHtml(m.file_url)}" download style="font-size:.8rem">⬇ İndir</a>`;
     } else {
-      html += `<br><a href="${escapeHtml(m.file_url)}" class="chat-msg-file" target="_blank" rel="noopener">📎 ${escapeHtml(m.file_url.split('/').pop())}</a>`;
+      html += `<br><span style="display:inline-flex;align-items:center;gap:4px">
+        <a href="${escapeHtml(m.file_url)}" class="chat-msg-file" target="_blank" rel="noopener">📎 ${fname}</a>${dlBtn}
+      </span>`;
     }
   }
   return html;

@@ -131,6 +131,21 @@ CREATE TABLE IF NOT EXISTS menus (
 // Migrations for existing databases
 try { db.exec('ALTER TABLE messages ADD COLUMN file_url TEXT'); } catch {}
 try { db.exec('ALTER TABLE messages ADD COLUMN donor_read INTEGER DEFAULT 0'); } catch {}
+try { db.exec(`CREATE TABLE IF NOT EXISTS msg_labels (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL,
+  color TEXT DEFAULT '#1a3d5c'
+)`); } catch {}
+try { db.exec(`CREATE TABLE IF NOT EXISTS msg_threads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread_key TEXT UNIQUE NOT NULL,
+  label_id INTEGER,
+  archived INTEGER DEFAULT 0
+)`); } catch {}
+['Bağışçı:#2e7d32','Genel:#1565c0','Teknik:#e65100','Acil:#c41230'].forEach(s => {
+  const [name, color] = s.split(':');
+  try { db.prepare('INSERT OR IGNORE INTO msg_labels(name,color) VALUES(?,?)').run(name, color); } catch {}
+});
 
 function setSetting(key, value) {
   db.prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')
