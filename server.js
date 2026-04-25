@@ -319,15 +319,15 @@ app.get('/api/admin/categories', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT * FROM categories ORDER BY COALESCE(parent_id,id), sort_order, id').all());
 });
 app.post('/api/admin/categories', requireAdmin, (req, res) => {
-  const { slug, title, icon, description, price, sort_order, active, parent_id } = req.body;
-  const info = db.prepare('INSERT INTO categories(slug,title,icon,description,price,sort_order,active,parent_id) VALUES(?,?,?,?,?,?,?,?)')
-    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null);
+  const { slug, title, icon, description, price, sort_order, active, parent_id, fixed_price, cover_image } = req.body;
+  const info = db.prepare('INSERT INTO categories(slug,title,icon,description,price,sort_order,active,parent_id,fixed_price,cover_image) VALUES(?,?,?,?,?,?,?,?,?,?)')
+    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null, fixed_price ? 1 : 0, cover_image || '');
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/categories/:id', requireAdmin, (req, res) => {
-  const { slug, title, icon, description, price, sort_order, active, parent_id } = req.body;
-  db.prepare('UPDATE categories SET slug=?,title=?,icon=?,description=?,price=?,sort_order=?,active=?,parent_id=? WHERE id=?')
-    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null, req.params.id);
+  const { slug, title, icon, description, price, sort_order, active, parent_id, fixed_price, cover_image } = req.body;
+  db.prepare('UPDATE categories SET slug=?,title=?,icon=?,description=?,price=?,sort_order=?,active=?,parent_id=?,fixed_price=?,cover_image=? WHERE id=?')
+    .run(slug, title, icon || '', description || '', price || 0, sort_order || 0, active ?? 1, parent_id || null, fixed_price ? 1 : 0, cover_image || '', req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/categories/:id', requireAdmin, (req, res) => {
@@ -377,15 +377,15 @@ app.get('/api/admin/hero', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT * FROM hero_slides ORDER BY sort_order').all());
 });
 app.post('/api/admin/hero', requireAdmin, (req, res) => {
-  const { title, subtitle, button_text, button_link, media_url, media_type, sort_order, active } = req.body;
-  const info = db.prepare('INSERT INTO hero_slides(title,subtitle,button_text,button_link,media_url,media_type,sort_order,active) VALUES(?,?,?,?,?,?,?,?)')
-    .run(title || '', subtitle || '', button_text || 'Destek Ol', button_link || '/bagis-yap.html', media_url || '', media_type || 'image', sort_order || 0, active ?? 1);
+  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active } = req.body;
+  const info = db.prepare('INSERT INTO hero_slides(title,subtitle,slide_icon,button_text,button_link,button2_text,button2_link,media_url,media_type,sort_order,active) VALUES(?,?,?,?,?,?,?,?,?,?,?)')
+    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || 'Bağış Yap', button_link || '/bagis-yap.html', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/hero/:id', requireAdmin, (req, res) => {
-  const { title, subtitle, button_text, button_link, media_url, media_type, sort_order, active } = req.body;
-  db.prepare('UPDATE hero_slides SET title=?,subtitle=?,button_text=?,button_link=?,media_url=?,media_type=?,sort_order=?,active=? WHERE id=?')
-    .run(title || '', subtitle || '', button_text || '', button_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, req.params.id);
+  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active } = req.body;
+  db.prepare('UPDATE hero_slides SET title=?,subtitle=?,slide_icon=?,button_text=?,button_link=?,button2_text=?,button2_link=?,media_url=?,media_type=?,sort_order=?,active=? WHERE id=?')
+    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || '', button_link || '', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/hero/:id', requireAdmin, (req, res) => {

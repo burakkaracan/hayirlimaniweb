@@ -133,6 +133,11 @@ try { db.exec('ALTER TABLE messages ADD COLUMN file_url TEXT'); } catch {}
 try { db.exec('ALTER TABLE messages ADD COLUMN donor_read INTEGER DEFAULT 0'); } catch {}
 try { db.exec('ALTER TABLE donations ADD COLUMN user_phone TEXT'); } catch {}
 try { db.exec('ALTER TABLE categories ADD COLUMN parent_id INTEGER DEFAULT NULL'); } catch {}
+try { db.exec('ALTER TABLE categories ADD COLUMN fixed_price INTEGER DEFAULT 0'); } catch {}
+try { db.exec('ALTER TABLE categories ADD COLUMN cover_image TEXT'); } catch {}
+try { db.exec("ALTER TABLE hero_slides ADD COLUMN slide_icon TEXT DEFAULT '🌙'"); } catch {}
+try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_text TEXT'); } catch {}
+try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_link TEXT'); } catch {}
 try { db.exec(`CREATE TABLE IF NOT EXISTS msg_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL,

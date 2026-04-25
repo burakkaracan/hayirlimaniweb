@@ -243,8 +243,11 @@ const sections = {
     fields: [
       { k: 'title', label: 'Başlık', wide: true },
       { k: 'subtitle', label: 'Alt Metin', type: 'textarea', wide: true },
-      { k: 'button_text', label: 'Buton Metni' },
-      { k: 'button_link', label: 'Buton Linki' },
+      { k: 'slide_icon', label: 'Slide İkonu (emoji — dots göstergesi için)' },
+      { k: 'button_text', label: '1. Buton Metni (Bağış Yap)' },
+      { k: 'button_link', label: '1. Buton Linki' },
+      { k: 'button2_text', label: '2. Buton Metni (Daha Fazla — boş bırakılabilir)' },
+      { k: 'button2_link', label: '2. Buton Linki' },
       { k: 'media_url', label: 'Görsel/Video URL', wide: true },
       { k: 'media_type', label: 'Medya Tipi', type: 'select', options: [['image', 'Görsel'], ['video', 'Video']] },
       { k: 'sort_order', label: 'Sıra', type: 'number' },
@@ -406,6 +409,7 @@ async function renderCategoriesSection() {
         <td style="font-size:1.4rem">${p.icon || ''}</td>
         <td><strong>${escapeHtml(p.title)}</strong></td>
         <td class="muted" style="font-size:.8rem">${escapeHtml(p.slug)}</td>
+        <td>${p.cover_image ? `<img src="${p.cover_image}" style="width:48px;height:36px;object-fit:cover;border-radius:4px" />` : '<span class="muted">—</span>'}</td>
         <td>${formatTL(p.price)}</td>
         <td>${p.sort_order}</td>
         <td>${p.active ? '✅' : '❌'}</td>
@@ -420,6 +424,7 @@ async function renderCategoriesSection() {
         <td style="font-size:1.2rem;padding-left:28px">${s.icon || ''}</td>
         <td style="padding-left:28px"><span style="color:var(--muted);margin-right:4px">↳</span>${escapeHtml(s.title)}</td>
         <td class="muted" style="font-size:.8rem">${escapeHtml(s.slug)}</td>
+        <td>${s.cover_image ? `<img src="${s.cover_image}" style="width:48px;height:36px;object-fit:cover;border-radius:4px" />` : '<span class="muted">—</span>'}</td>
         <td>${formatTL(s.price)}</td>
         <td>${s.sort_order}</td>
         <td>${s.active ? '✅' : '❌'}</td>
@@ -438,6 +443,7 @@ async function renderCategoriesSection() {
       <td style="font-size:1.2rem">${s.icon || ''}</td>
       <td><em class="muted">[Üst kategori yok]</em> ${escapeHtml(s.title)}</td>
       <td class="muted" style="font-size:.8rem">${escapeHtml(s.slug)}</td>
+      <td>${s.cover_image ? `<img src="${s.cover_image}" style="width:48px;height:36px;object-fit:cover;border-radius:4px" />` : '<span class="muted">—</span>'}</td>
       <td>${formatTL(s.price)}</td>
       <td>${s.sort_order}</td>
       <td>${s.active ? '✅' : '❌'}</td>
@@ -455,7 +461,7 @@ async function renderCategoriesSection() {
     <div class="admin-section">
       ${rows.length === 0 ? '<div class="empty">Henüz kategori yok</div>' : `
         <div class="table-wrap"><table>
-          <thead><tr><th>İkon</th><th>Başlık</th><th>Slug</th><th>Tutar</th><th>Sıra</th><th>Aktif</th><th>İşlem</th></tr></thead>
+          <thead><tr><th>İkon</th><th>Başlık</th><th>Slug</th><th>Görsel</th><th>Tutar</th><th>Sıra</th><th>Aktif</th><th>İşlem</th></tr></thead>
           <tbody>${tableRows}${orphanRows}</tbody>
         </table></div>`}
     </div>`;
@@ -486,7 +492,16 @@ function openCategoryForm(parentId, row) {
       <div><label>İkon (emoji)</label><input type="text" name="icon" value="${escapeHtml(r.icon||'')}" placeholder="🎁" /></div>
       <div><label>Birim Tutar (₺)</label><input type="number" name="price" value="${r.price||0}" /></div>
       <div><label>Sıra</label><input type="number" name="sort_order" value="${r.sort_order||0}" /></div>
-      <div class="wide"><label>Açıklama</label><textarea name="description" rows="2">${escapeHtml(r.description||'')}</textarea></div>
+      <div class="wide"><label>Açıklama (panel metni)</label><textarea name="description" rows="3">${escapeHtml(r.description||'')}</textarea></div>
+      <div class="wide">
+        <label>Kapak Görseli</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" name="cover_image" id="upload_url_cover_image" value="${escapeHtml(r.cover_image||'')}" style="flex:1" placeholder="URL girin veya dosya yükleyin" />
+          <label class="btn btn-outline btn-sm" style="cursor:pointer;white-space:nowrap">Dosya Seç<input type="file" accept="image/*" style="display:none" onchange="uploadMediaFile(this,'cover_image')" /></label>
+        </div>
+        ${r.cover_image ? `<img src="${escapeHtml(r.cover_image)}" style="margin-top:8px;max-height:80px;border-radius:6px;max-width:100%" />` : ''}
+      </div>
+      <div class="wide"><label><input type="checkbox" name="fixed_price" ${r.fixed_price?'checked':''} /> Sabit Tutar — bağışçı tutarı değiştiremez</label></div>
       <div class="wide"><label><input type="checkbox" name="active" ${(r.active??1)?'checked':''} /> Aktif</label></div>
     </div>
     <div class="modal-actions">
@@ -512,6 +527,8 @@ async function saveCategoryForm(id) {
     price: parseFloat(get('price').value) || 0,
     sort_order: parseInt(get('sort_order').value) || 0,
     description: get('description').value.trim(),
+    cover_image: get('cover_image').value.trim(),
+    fixed_price: get('fixed_price').checked ? 1 : 0,
     active: get('active').checked ? 1 : 0,
     parent_id: get('parent_id').value ? parseInt(get('parent_id').value) : null,
   };

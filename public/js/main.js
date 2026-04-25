@@ -26,6 +26,22 @@ const svgIcon = (name) => {
     mail: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="m22 6-10 7L2 6"/></svg>',
     location: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
     iban: '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+    heart: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    arrow_right: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>',
+    check: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    login_in: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>',
+    user_plus: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>',
+    logout: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    settings_sm: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+    hand_heart: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 12h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14"/><path d="m7 18 1.6-1.4A2 2 0 0 1 10 16h4a2 2 0 0 0 1.4-.6l4-4a2 2 0 0 0-2.74-2.83l-1.35 1.35"/><path d="m2 13 6 6"/></svg>',
+    bell: '<svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+    volume_on: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>',
+    volume_off: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
+    drop: '<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+    globe: '<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    heart_sm: '<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    star_sm: '<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    hands: '<svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>',
   };
   return icons[name] || '';
 };
@@ -80,20 +96,25 @@ function renderHeader() {
           <a href="/iletisim.html">İletişim</a>
         </nav>
         <div class="header-actions">
-          <a href="/bagis-yap.html" class="btn btn-accent">Bağış Yap</a>
+          <a href="/bagis-yap.html" class="btn btn-accent">${svgIcon('heart')} Bağış Yap</a>
           <button class="icon-btn" id="btn-search" aria-label="Ara">${svgIcon('search')}</button>
           ${u ? `
             <div class="profile-menu dropdown">
-              <button class="icon-btn" onclick="this.parentElement.classList.toggle('open')">${svgIcon('user')}</button>
-              <div class="dropdown-menu">
-                <a href="/profil.html">Profilim</a>
-                ${(u.role === 'admin' || u.role === 'staff') ? '<a href="/admin.html">Admin Panel</a>' : ''}
-                <a href="#" onclick="logout(event)">Çıkış Yap</a>
+              <button class="icon-btn" onclick="this.parentElement.classList.toggle('open')" aria-label="Hesabım">${svgIcon('user')}</button>
+              <div class="dropdown-menu" style="right:0;left:auto;min-width:170px">
+                <a href="/profil.html" style="display:flex;align-items:center;gap:8px">${svgIcon('user')} Profilim</a>
+                ${(u.role === 'admin' || u.role === 'staff') ? `<a href="/admin.html" style="display:flex;align-items:center;gap:8px">${svgIcon('settings_sm')} Admin Panel</a>` : ''}
+                <a href="#" onclick="logout(event)" style="display:flex;align-items:center;gap:8px">${svgIcon('logout')} Çıkış Yap</a>
               </div>
             </div>
           ` : `
-            <a href="/giris.html" class="auth-btn">Giriş</a>
-            <a href="/kayit.html" class="auth-btn btn btn-outline btn-sm">Kayıt Ol</a>
+            <div class="profile-menu dropdown" id="auth-dropdown">
+              <button class="icon-btn" onclick="this.parentElement.classList.toggle('open')" aria-label="Giriş / Kayıt">${svgIcon('user')}</button>
+              <div class="dropdown-menu" style="right:0;left:auto;min-width:170px">
+                <a href="/giris.html" style="display:flex;align-items:center;gap:8px">${svgIcon('login_in')} Giriş Yap</a>
+                <a href="/kayit.html" style="display:flex;align-items:center;gap:8px">${svgIcon('user_plus')} Kayıt Ol</a>
+              </div>
+            </div>
           `}
           <button class="icon-btn burger" onclick="document.getElementById('main-nav').classList.toggle('open')">${svgIcon('menu')}</button>
         </div>
@@ -130,7 +151,7 @@ function renderHeader() {
   });
 
   // desktop dropdown: delay close so cursor can reach submenu
-  document.querySelectorAll('.main-nav .dropdown').forEach(d => {
+  document.querySelectorAll('.main-nav .dropdown, .header-actions .dropdown').forEach(d => {
     let closeTimer;
     d.addEventListener('mouseenter', () => {
       clearTimeout(closeTimer);
@@ -187,7 +208,7 @@ function renderFooter() {
           <p style="font-size:.85rem">Yardım çalışmalarımızdan haberdar olmak için e-posta aboneliği.</p>
           <form class="newsletter" onsubmit="subscribeNewsletter(event)">
             <input type="email" name="email" placeholder="E-posta adresiniz" required />
-            <button type="submit" class="btn btn-accent">Abone Ol</button>
+            <button type="submit" class="btn btn-accent">${svgIcon('check')} Abone Ol</button>
           </form>
           <div class="iban-box">
             <small>Bağış IBAN</small>

@@ -7,7 +7,7 @@
   <meta name="description" content="Hayır Limanı Derneği; bağış, kurban, su kuyusu, yetim, eğitim ve acil yardım projeleri ile her mazlumun kıyısında.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Archivo:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -24,15 +24,24 @@
   <div class="container">
     <!-- QUICK DONATE BAR -->
     <div class="quick-donate-bar">
-      <div class="qd-label">
-        <strong>💚 Hızlı Bağış</strong>
-        <span>Hayra vesile olun, hayat değiştirin.</span>
+      <div class="qd-brand">
+        <svg width="30" height="30" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="flex-shrink:0">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <div>
+          <div class="qd-title">hızlı bağış</div>
+          <div class="qd-sub">Hayra vesile olun</div>
+        </div>
       </div>
-      <select id="qd-type">
-        <option value="">Bağış Türü Seçin</option>
-      </select>
-      <input type="number" id="qd-amount" placeholder="Tutar (₺)" min="1" />
-      <button class="btn btn-primary btn-lg" onclick="quickDonate()">Hemen Destek Ol</button>
+      <div class="qd-field">
+        <div class="qd-field-label">Bağış Türü</div>
+        <select id="qd-type"><option value="">Seçiniz…</option></select>
+      </div>
+      <div class="qd-field">
+        <div class="qd-field-label">Tutar Giriniz</div>
+        <input type="number" id="qd-amount" placeholder="₺" min="1" />
+      </div>
+      <button class="qd-btn" onclick="quickDonate()">Hemen Destek Ol!</button>
     </div>
 
     <!-- CATEGORIES -->
@@ -42,7 +51,10 @@
         <h2>Hangi alanda destek olmak istersiniz?</h2>
         <p>Sizin için anlamlı olan bir çalışmayı seçerek bağışınızı ihtiyaç sahibine ulaştırabilirsiniz.</p>
       </div>
-      <div class="categories" id="categories"></div>
+      <div class="cat-tabs-wrap">
+        <div class="cat-tabs" id="cat-tabs"></div>
+        <div class="cat-panel" id="cat-panel"></div>
+      </div>
     </section>
 
     <!-- AMOUNT PICKER -->
@@ -65,7 +77,7 @@
             </div>
             <div class="amount-custom">
               <input type="number" id="custom-amount" placeholder="Farklı tutar (₺)" />
-              <button class="btn btn-primary" onclick="goDonate()">Bağış Yap</button>
+              <button class="btn btn-primary" onclick="goDonate()"><svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Bağış Yap</button>
             </div>
           </div>
         </div>
@@ -90,70 +102,239 @@
     let heroSlides = [];
     let heroIndex = 0;
     let heroTimer = null;
+    let heroAnimFrame = null;
+    let heroMuted = true;
+
+    function updateVolumeBtn() {
+      const btn = document.getElementById('hero-volume-btn');
+      if (!btn) return;
+      const slide = heroSlides[heroIndex];
+      const isVideo = slide && slide.media_type === 'video' && slide.media_url;
+      btn.classList.toggle('visible', !!isVideo);
+      btn.innerHTML = heroMuted ? svgIcon('volume_off') : svgIcon('volume_on');
+      btn.title = heroMuted ? 'Sesi Aç' : 'Sesi Kapat';
+    }
+
+    function toggleHeroVolume() {
+      heroMuted = !heroMuted;
+      document.querySelectorAll('.hero-slide video').forEach(v => { v.muted = heroMuted; });
+      updateVolumeBtn();
+    }
 
     async function loadHero() {
       heroSlides = await api('/api/hero');
       const slider = document.getElementById('hero-slider');
       const dots = document.getElementById('hero-dots');
       if (!heroSlides.length) {
-        // fallback
         heroSlides = [{
           title: 'Her mazlumun kıyısında',
           subtitle: 'Hayır Limanı Derneği olarak bağışlarınızı ihtiyaç sahiplerine en hızlı, en şeffaf şekilde ulaştırıyoruz.',
           button_text: 'Bağış Yap',
           button_link: '/bagis-yap.html',
+          button2_text: 'Daha Fazla',
+          button2_link: '/faaliyetler.html',
           media_url: '',
-          media_type: 'image'
+          media_type: 'image',
+          slide_icon: '🌙'
         }];
       }
+
       slider.innerHTML = heroSlides.map((s, i) => {
         const bg = s.media_url ? `background-image:url('${s.media_url}')` : `background:linear-gradient(135deg, #0d2b42, #1a3d5c)`;
         const media = s.media_type === 'video' && s.media_url
-          ? `<video autoplay muted loop playsinline src="${s.media_url}"></video>`
+          ? `<video autoplay muted playsinline src="${s.media_url}"></video>`
+          : '';
+        const btn1 = s.button_text
+          ? `<a href="${s.button_link || '/bagis-yap.html'}" class="btn btn-accent btn-lg">${svgIcon('heart')} ${s.button_text}</a>`
+          : '';
+        const btn2 = s.button2_text
+          ? `<a href="${s.button2_link || s.button_link || '/faaliyetler.html'}" class="btn hero-btn-secondary btn-lg">${svgIcon('arrow_right')} ${s.button2_text}</a>`
           : '';
         return `
-          <div class="hero-slide ${i === 0 ? 'active' : ''}" style="${bg}">
+          <div class="hero-slide ${i === 0 ? 'active' : ''}" style="${bg}" data-index="${i}">
             ${media}
             <div class="container hero-content">
               <h1>${s.title || ''}</h1>
               <p>${s.subtitle || ''}</p>
-              ${s.button_text ? `<a href="${s.button_link || '/bagis-yap.html'}" class="btn btn-accent btn-lg">${s.button_text}</a>` : ''}
+              ${btn1 || btn2 ? `<div class="hero-btns">${btn1}${btn2}</div>` : ''}
             </div>
           </div>`;
       }).join('');
-      dots.innerHTML = heroSlides.map((_, i) => `<button class="${i === 0 ? 'active' : ''}" onclick="goSlide(${i})"></button>`).join('');
-      if (heroSlides.length > 1) startHeroRotation();
-    }
-    function goSlide(i) {
-      heroIndex = i;
-      document.querySelectorAll('.hero-slide').forEach((el, idx) => el.classList.toggle('active', idx === i));
-      document.querySelectorAll('.hero-dots button').forEach((el, idx) => el.classList.toggle('active', idx === i));
-      startHeroRotation();
-    }
-    function startHeroRotation() {
-      clearInterval(heroTimer);
-      heroTimer = setInterval(() => {
-        heroIndex = (heroIndex + 1) % heroSlides.length;
-        goSlide(heroIndex);
-      }, 6000);
+
+      // Ses butonu ekle
+      const volBtn = document.createElement('button');
+      volBtn.id = 'hero-volume-btn';
+      volBtn.className = 'hero-volume-btn';
+      volBtn.setAttribute('aria-label', 'Sesi aç/kapat');
+      volBtn.onclick = toggleHeroVolume;
+      slider.appendChild(volBtn);
+      updateVolumeBtn();
+
+      if (heroSlides.length > 1) {
+        dots.innerHTML = heroSlides.map((s, i) => {
+          const iconSvg = svgIcon(s.slide_icon) || `<span style="font-size:12px;line-height:1">${s.slide_icon || '●'}</span>`;
+          const line = i < heroSlides.length - 1
+            ? `<div class="hero-dot-line"><div class="hero-dot-fill" id="dot-fill-${i}"></div></div>`
+            : '';
+          return `<button class="hero-dot-btn${i === 0 ? ' active' : ''}" onclick="goSlide(${i})" title="${(s.title || '').replace(/"/g, '')}">${iconSvg}</button>${line}`;
+        }).join('');
+        startHeroRotation();
+      }
     }
 
+    function goSlide(i) {
+      heroIndex = i;
+      document.querySelectorAll('.hero-slide').forEach((el, idx) => {
+        el.classList.toggle('active', idx === i);
+        const vid = el.querySelector('video');
+        if (vid) {
+          if (idx === i) { vid.currentTime = 0; vid.muted = heroMuted; vid.play().catch(() => {}); }
+          else vid.pause();
+        }
+      });
+      document.querySelectorAll('.hero-dot-btn').forEach((el, idx) => el.classList.toggle('active', idx === i));
+      resetDotProgress();
+      updateVolumeBtn();
+      startHeroRotation();
+    }
+
+    function resetDotProgress() {
+      document.querySelectorAll('.hero-dot-fill').forEach(f => { f.style.transition = 'none'; f.style.width = '0%'; });
+    }
+
+    function animateHeroDot(slideIndex, duration) {
+      if (heroAnimFrame) cancelAnimationFrame(heroAnimFrame);
+      const fill = document.getElementById('dot-fill-' + slideIndex);
+      if (!fill) return;
+      const start = Date.now();
+      const step = () => {
+        const pct = Math.min(100, ((Date.now() - start) / duration) * 100);
+        fill.style.width = pct + '%';
+        if (pct < 100) heroAnimFrame = requestAnimationFrame(step);
+      };
+      heroAnimFrame = requestAnimationFrame(step);
+    }
+
+    function startHeroRotation() {
+      clearInterval(heroTimer);
+      if (heroAnimFrame) cancelAnimationFrame(heroAnimFrame);
+
+      const slide = heroSlides[heroIndex];
+      const isVideo = slide.media_type === 'video' && slide.media_url;
+      const activeEl = document.querySelectorAll('.hero-slide')[heroIndex];
+      const vidEl = activeEl && activeEl.querySelector('video');
+
+      if (isVideo && vidEl) {
+        vidEl.onended = null;
+        vidEl.onended = () => {
+          heroIndex = (heroIndex + 1) % heroSlides.length;
+          goSlide(heroIndex);
+        };
+        const setup = () => {
+          const dur = vidEl.duration && !isNaN(vidEl.duration) ? vidEl.duration * 1000 : 8000;
+          animateHeroDot(heroIndex, dur);
+        };
+        if (vidEl.readyState >= 1) setup();
+        else { vidEl.addEventListener('loadedmetadata', setup, { once: true }); animateHeroDot(heroIndex, 8000); }
+      } else {
+        const dur = 6000;
+        animateHeroDot(heroIndex, dur);
+        heroTimer = setInterval(() => {
+          heroIndex = (heroIndex + 1) % heroSlides.length;
+          goSlide(heroIndex);
+        }, dur);
+      }
+    }
+
+    const _S = (p) => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    const CAT_ICONS = {
+      'kurban':        _S('<ellipse cx="9" cy="11" rx="5" ry="4"/><circle cx="16" cy="8" r="2.5"/><line x1="6" y1="15" x2="5.5" y2="20"/><line x1="9" y1="15" x2="9" y2="20"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="14.5" y1="10.5" x2="15" y2="20"/>'),
+      'su-kuyusu':     _S('<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'),
+      'kalici-eserler':_S('<path d="M3 22h18"/><path d="M5 22V10l7-7 7 7v12"/><path d="M9 22v-5h6v5"/>'),
+      'zekat':         _S('<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>'),
+      'acil-yardim':   _S('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'),
+      'egitim':        _S('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+      'yetim':         _S('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+      'gida':          _S('<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+    };
+    const CAT_DESCS = {
+      'kurban':         'Kurban bağışlarınızı ihtiyaç sahiplerine ulaştırıyor, kesim ve dağıtımı sizin adınıza güvenle gerçekleştiriyoruz. Yurt içi ve yurt dışında vekâleten kurban kesilmektedir.',
+      'su-kuyusu':      'Temiz suya erişimi olmayan bölgelere açtığımız her kuyu yüzlerce insanın hayatına dokunuyor. GPS koordinatları ve görselleriyle şeffaf takip sağlıyoruz.',
+      'kalici-eserler': 'Cami, okul ve yetimhane inşaatlarına ortak olun. Her eser toplumda kalıcı bir iz bırakır ve katlandıkça sevap kazandırmaya devam eder.',
+      'zekat':          'Zekatınızı usulüne uygun şekilde en muhtaç kesimlere ulaştırıyoruz. Hesaplama ve dağıtım sürecinin tamamını güvenle bize emanet edebilirsiniz.',
+      'acil-yardim':    'Deprem, sel ve çatışma bölgelerine anında müdahale ediyoruz. Bağışlarınız saatler içinde yerinden edilmiş ve ihtiyaç sahibi kardeşlerimize ulaşır.',
+      'egitim':         'Maddi imkânı yetersiz öğrencilere burs ve materyal desteği sunarak geleceğe yatırım yapın. Eğitim en sürdürülebilir yardım biçimidir.',
+      'yetim':          'Yetim çocuklara aylık düzenli destek ile eğitim, sağlık ve barınma ihtiyaçlarını karşılıyoruz. Bir çocuğun hayatına dokunmak yalnızca bir adım uzağınızda.',
+      'gida':           'İhtiyaç sahibi ailelere temel gıda maddelerini içeren koli göndererek sofralarına bereket katın. Her paket bir aileye haftalar boyu yetecek ürünleri kapsar.',
+    };
+
+    let _cats = [], _catIdx = 0, _catTimer = null;
+    const CAT_DUR = 5500;
+
     async function loadCategories() {
-      const cats = await api('/api/categories');
-      document.getElementById('categories').innerHTML = cats.map(c => `
-        <a href="/bagis-yap.html?kat=${c.slug}" class="category-card">
-          <div class="cat-icon">${c.icon || '💚'}</div>
-          <div class="cat-title">${c.title}</div>
-          ${c.price ? `<div class="cat-price">Birim ${formatTL(c.price)}</div>` : ''}
-        </a>
+      _cats = await api('/api/categories');
+      if (!_cats.length) return;
+
+      document.getElementById('cat-tabs').innerHTML = _cats.map((c, i) => `
+        <button class="cat-tab${i === 0 ? ' active' : ''}" onclick="selectCat(${i})">
+          <span class="cat-tab-icon">${CAT_ICONS[c.slug] || _S('<circle cx="12" cy="12" r="9"/>')}</span>
+          <span class="cat-tab-title">${c.title}</span>
+        </button>
       `).join('');
+
       const qd = document.getElementById('qd-type');
-      qd.innerHTML = '<option value="">Bağış Türü Seçin</option>' + cats.map(c => `<option value="${c.slug}" data-price="${c.price}">${c.title}${c.price ? ` (${formatTL(c.price)})` : ''}</option>`).join('');
+      qd.innerHTML = '<option value="">Seçiniz…</option>' + _cats.map(c =>
+        `<option value="${c.slug}" data-price="${c.price || 0}" data-fixed="${c.fixed_price || 0}">${c.title}</option>`
+      ).join('');
       qd.addEventListener('change', () => {
         const opt = qd.options[qd.selectedIndex];
         const p = parseFloat(opt.dataset.price || 0);
-        if (p) document.getElementById('qd-amount').value = p;
+        const fixed = opt.dataset.fixed === '1';
+        const amtInput = document.getElementById('qd-amount');
+        amtInput.value = p || '';
+        amtInput.disabled = fixed;
+        amtInput.placeholder = fixed ? formatTL(p) : '₺';
       });
+
+      renderCatPanel(_cats[0]);
+      startCatRotation();
+    }
+
+    function selectCat(i) {
+      _catIdx = i;
+      document.querySelectorAll('.cat-tab').forEach((t, idx) => t.classList.toggle('active', idx === i));
+      const panel = document.getElementById('cat-panel');
+      panel.classList.add('fading');
+      setTimeout(() => { renderCatPanel(_cats[i]); panel.classList.remove('fading'); }, 180);
+      startCatRotation();
+    }
+
+    function renderCatPanel(c) {
+      const desc = (c.description && c.description.length > 40) ? c.description : (CAT_DESCS[c.slug] || c.description || '');
+      const media = c.cover_image
+        ? `<img class="cat-panel-img" src="${c.cover_image}" alt="${c.title}" loading="lazy" />`
+        : `<div class="cat-panel-placeholder">${CAT_ICONS[c.slug] || ''}</div>`;
+      document.getElementById('cat-panel').innerHTML = `
+        <div>
+          <h3 class="cat-panel-title">${c.title}</h3>
+          <p class="cat-panel-desc">${desc}</p>
+          <div class="cat-panel-actions">
+            <a href="/bagis-yap.html?kat=${c.slug}" class="btn btn-primary">Bağış Yap</a>
+          </div>
+        </div>
+        <div>${media}</div>
+      `;
+    }
+
+    function startCatRotation() {
+      clearInterval(_catTimer);
+      _catTimer = setInterval(() => {
+        _catIdx = (_catIdx + 1) % _cats.length;
+        document.querySelectorAll('.cat-tab').forEach((t, i) => t.classList.toggle('active', i === _catIdx));
+        const panel = document.getElementById('cat-panel');
+        panel.classList.add('fading');
+        setTimeout(() => { renderCatPanel(_cats[_catIdx]); panel.classList.remove('fading'); }, 180);
+      }, CAT_DUR);
     }
 
     async function loadCampaigns() {
@@ -175,7 +356,7 @@
                 <div><strong>${formatTL(c.goal)}</strong><span>Hedef</span></div>
                 <div><strong>${formatNumber(c.donor_count)}</strong><span>Bağışçı</span></div>
               </div>
-              <a href="/kampanya.html?slug=${c.slug}" class="btn btn-primary btn-block">Bağış Yap</a>
+              <a href="/kampanya.html?slug=${c.slug}" class="btn btn-primary btn-block">${svgIcon('heart')} Bağış Yap</a>
             </div>
           </div>
         `;

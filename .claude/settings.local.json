@@ -18,7 +18,14 @@
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(netstat -ano)",
       "Bash(taskkill //F //PID 2876)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(npm start *)",
+      "Bash(curl -s http://localhost:3000/api/hero)",
+      "Bash(npx kill-port *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl -s http://localhost:3000/css/style.css)",
+      "Bash(python -c ' *)",
+      "Bash(curl *)"
     ]
   }
 }
