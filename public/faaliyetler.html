@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Faaliyetler — Hayır Limanı Derneği</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/images/icon.png">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -17,23 +18,78 @@
     </div>
   </section>
 
+  <!-- FAALİYETLER -->
   <div class="container section">
     <div class="section-head">
       <div class="eyebrow">Sahadan Haberler</div>
-      <h2>Gerçekleştirdiğimiz ve süren çalışmalar</h2>
+      <h2>Gerçekleştirdiğimiz ve süren <span class="heading-accent">çalışmalar</span></h2>
       <p>Yardımlarınızın nerelere ulaştığını, hangi projelere dönüştüğünü burada takip edebilirsiniz.</p>
     </div>
+
+    <!-- Bölge tab menüsü -->
+    <div class="fl-tabs-wrap"><div class="fl-tabs" id="region-tabs">
+      <button class="fl-tab active" data-region="all">Tümü</button>
+      <button class="fl-tab" data-region="ortadogu">Ortadoğu</button>
+      <button class="fl-tab" data-region="afrika">Afrika</button>
+      <button class="fl-tab" data-region="balkanlar">Balkanlar</button>
+      <button class="fl-tab" data-region="turki-devletler">Türkî Devletler</button>
+      <button class="fl-tab" data-region="turkiye">Türkiye</button>
+    </div></div>
+
     <div class="campaigns" id="activities"></div>
   </div>
 
+  <!-- KAMPANYALAR -->
+  <div class="container section">
+    <div class="section-head">
+      <div class="eyebrow">Kampanyalarımız</div>
+      <h2>Hedefe <span class="heading-accent">ulaşalım</span></h2>
+      <p>Belirlenmiş hedeflerle yürüttüğümüz kampanyaları takip edin ve destek olun.</p>
+    </div>
+
+    <!-- Kampanya tab menüsü -->
+    <div class="fl-tabs-wrap"><div class="fl-tabs" id="campaign-tabs">
+      <button class="fl-tab active" data-ctab="active">Devam Eden</button>
+      <button class="fl-tab" data-ctab="completed">Tamamlanmış</button>
+    </div></div>
+
+    <div class="campaigns" id="campaign-list"></div>
+  </div>
+
+  <div id="pre-footer-cta"></div>
   <footer id="site-footer" class="footer"></footer>
   <script src="/js/main.js"></script>
   <script>
-    window.addEventListener('app-ready', async () => {
-      const rows = await api('/api/activities');
+    const REGIONS = {
+      'all':            'Tümü',
+      'ortadogu':       'Ortadoğu',
+      'afrika':         'Afrika',
+      'balkanlar':      'Balkanlar',
+      'turki-devletler':'Türkî Devletler',
+      'turkiye':        'Türkiye'
+    };
+
+    let allActivities = [];
+    let allCampaigns  = [];
+    let activeRegion  = 'all';
+    let activeCTab    = 'active';
+
+    function formatTL(n) {
+      return Number(n || 0).toLocaleString('tr-TR') + ' ₺';
+    }
+
+    /* ── Faaliyetler ── */
+    function renderActivities() {
       const el = document.getElementById('activities');
-      if (!rows.length) return el.innerHTML = '<div class="empty">Henüz faaliyet eklenmedi.</div>';
-      el.innerHTML = rows.map(a => {
+      const filtered = activeRegion === 'all'
+        ? allActivities
+        : allActivities.filter(a => (a.regions || '').split(',').map(r => r.trim()).includes(activeRegion));
+
+      if (!filtered.length) {
+        el.innerHTML = '<div class="empty">Bu bölge için kayıtlı faaliyet bulunmuyor.</div>';
+        return;
+      }
+      el.innerHTML = filtered.map(a => {
         const bg = a.cover_image ? `background-image:url('${a.cover_image}')` : '';
         return `
           <div class="campaign-card">
@@ -46,9 +102,95 @@
               <div class="muted" style="font-size:.85rem; margin-bottom:14px;">📅 ${a.date || '-'}</div>
               <a href="/faaliyet.html?slug=${a.slug}" class="btn btn-primary btn-block">Detayları Gör & Destek Ol</a>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
+    }
+
+    /* ── Kampanyalar ── */
+    function renderCampaigns() {
+      const el = document.getElementById('campaign-list');
+      const list = activeCTab === 'active'
+        ? allCampaigns.filter(c => c.completed == 0)
+        : allCampaigns.filter(c => c.completed == 1);
+
+      if (!list.length) {
+        el.innerHTML = '<div class="empty">Bu kategoride kampanya bulunmuyor.</div>';
+        return;
+      }
+
+      el.innerHTML = list.map(c => {
+        const pct = c.goal > 0 ? Math.min(100, Math.round((c.raised / c.goal) * 100)) : 0;
+        const bg  = c.cover_image ? `background-image:url('${c.cover_image}')` : '';
+
+        if (activeCTab === 'active') {
+          return `
+            <div class="campaign-card">
+              <div class="img" style="${bg}">
+                <span class="tag fl-tag-active">Devam Ediyor</span>
+              </div>
+              <div class="content">
+                <h3>${c.title}</h3>
+                <p class="summary">${c.summary || ''}</p>
+                <div class="progress"><div class="fill" style="width:${pct}%"></div></div>
+                <div class="campaign-stats" style="margin-bottom:14px;">
+                  <div><strong>${formatTL(c.raised)}</strong><span>Toplanan</span></div>
+                  <div><strong>${formatTL(c.goal)}</strong><span>Hedef</span></div>
+                  <div><strong>${Number(c.donor_count||0).toLocaleString('tr-TR')}</strong><span>Bağışçı</span></div>
+                </div>
+                <a href="/faaliyet.html?slug=${c.slug}" class="btn btn-accent btn-block">Destek Ol</a>
+              </div>
+            </div>`;
+        } else {
+          return `
+            <div class="campaign-card fl-card-completed">
+              <div class="img" style="${bg}">
+                <span class="tag fl-tag-done">Tamamlandı</span>
+              </div>
+              <div class="content">
+                <h3>${c.title}</h3>
+                <p class="summary">${c.summary || ''}</p>
+                <div class="fl-completed-stats">
+                  <div class="fl-stat"><span class="fl-stat-label">Toplanan</span><strong>${formatTL(c.raised)}</strong></div>
+                  <div class="fl-stat"><span class="fl-stat-label">Hedef</span><strong>${formatTL(c.goal)}</strong></div>
+                  <div class="fl-stat"><span class="fl-stat-label">Bağışçı</span><strong>${Number(c.donor_count||0).toLocaleString('tr-TR')}</strong></div>
+                  <div class="fl-stat"><span class="fl-stat-label">Başarı</span><strong>${pct}%</strong></div>
+                </div>
+                <a href="/faaliyet.html?slug=${c.slug}" class="btn btn-outline btn-block" style="margin-top:14px;">Detayları Gör</a>
+              </div>
+            </div>`;
+        }
+      }).join('');
+    }
+
+    /* ── Tab olayları ── */
+    document.getElementById('region-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.fl-tab');
+      if (!btn) return;
+      document.querySelectorAll('#region-tabs .fl-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeRegion = btn.dataset.region;
+      renderActivities();
+    });
+
+    document.getElementById('campaign-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.fl-tab');
+      if (!btn) return;
+      document.querySelectorAll('#campaign-tabs .fl-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCTab = btn.dataset.ctab;
+      renderCampaigns();
+    });
+
+    /* ── Veri yükle ── */
+    window.addEventListener('app-ready', async () => {
+      const [acts, camps] = await Promise.all([
+        api('/api/activities'),
+        api('/api/campaigns-all')
+      ]);
+      allActivities = acts  || [];
+      allCampaigns  = camps || [];
+      renderActivities();
+      renderCampaigns();
     });
   </script>
 </body>

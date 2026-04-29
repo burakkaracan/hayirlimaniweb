@@ -27,7 +27,13 @@
       "Bash(python -c ' *)",
       "Bash(curl *)",
       "PowerShell(Stop-Process *)",
-      "Bash(taskkill //F //IM node.exe)"
+      "Bash(taskkill //F //IM node.exe)",
+      "Read(//e/Tasarım İşler/Hayır Limanı/**)",
+      "Bash(identify \"/c/hayirlimani/hayirlimaniweb/public/images/icon.png\")",
+      "Bash(python3 -c ' *)",
+      "Bash(sqlite3 /c/hayirlimani/hayirlimaniweb/data.sqlite \"SELECT key,value FROM settings;\")",
+      "Bash(pkill -f \"node server.js\")",
+      "PowerShell(Get-Process *)"
     ]
   }
 }

@@ -45,8 +45,8 @@ function renderShell() {
   document.getElementById('admin-root').innerHTML = `
     <div class="admin-shell">
       <aside class="admin-sidebar">
-        <a href="/" class="logo" style="display:block; padding: 0 0 16px;">
-          <img src="/images/logo.png" alt="Hayır Limanı" class="logo-img" style="filter:brightness(0) invert(1); max-height:40px;" />
+        <a href="/" class="logo" style="display:block; padding: 10px 14px 20px;">
+          <img src="/images/logo-white.png" alt="Hayır Limanı" class="logo-img" style="max-height:44px;" />
         </a>
         <nav class="admin-nav">
           <a href="#dashboard" data-s="dashboard">${NAV_ICONS.dashboard} Panel</a>
@@ -176,7 +176,7 @@ const sections = {
   async categories() { await renderCategoriesSection(); },
 
   async campaigns() { await renderCrudSection({
-    key: 'campaigns', title: 'Kampanyalar',
+    key: 'campaigns', title: 'Kampanyalar', publicEndpoint: '/api/admin/campaigns',
     fields: [
       { k: 'title', label: 'Başlık', wide: true },
       { k: 'slug', label: 'Slug' },
@@ -184,26 +184,33 @@ const sections = {
       { k: 'goal', label: 'Hedef (₺)', type: 'number' },
       { k: 'raised', label: 'Toplanan (₺)', type: 'number' },
       { k: 'donor_count', label: 'Bağışçı Sayısı', type: 'number' },
-      { k: 'active', label: 'Aktif', type: 'checkbox' },
+      { k: 'active', label: 'Aktif (kaldırınca siteden gizlenir)', type: 'checkbox' },
+      { k: 'completed', label: 'Durum', type: 'select', options: [['0', 'Devam Ediyor'], ['1', 'Tamamlandı']] },
       { k: 'summary', label: 'Özet', type: 'textarea', wide: true },
       { k: 'body', label: 'Detay Metni', type: 'textarea', wide: true },
     ],
     list: (rows) => `
       <div class="table-wrap"><table>
-        <thead><tr><th>Başlık</th><th>Hedef</th><th>Toplanan</th><th>Bağışçı</th><th>Aktif</th><th>İşlem</th></tr></thead>
+        <thead><tr><th>Başlık</th><th>Hedef</th><th>Toplanan</th><th>Bağışçı</th><th>Durum</th><th>Aktif</th><th>İşlem</th></tr></thead>
         <tbody>
-          ${rows.map(r => `
+          ${rows.map(r => {
+            const pct = r.goal > 0 ? Math.min(100, Math.round((r.raised / r.goal) * 100)) : 0;
+            const statusBadge = r.completed
+              ? '<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600">Tamamlandı</span>'
+              : '<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600">Devam Ediyor</span>';
+            return `
             <tr>
               <td><strong>${r.title}</strong><div class="muted" style="font-size:.8rem">${r.slug}</div></td>
               <td>${formatTL(r.goal)}</td>
-              <td>${formatTL(r.raised)}</td>
+              <td>${formatTL(r.raised)}<div style="margin-top:3px;height:4px;background:#e2e8f0;border-radius:2px;width:80px"><div style="height:4px;background:var(--brand);border-radius:2px;width:${pct}%"></div></div><div class="muted" style="font-size:.72rem">${pct}%</div></td>
               <td>${formatNumber(r.donor_count)}</td>
+              <td>${statusBadge}</td>
               <td>${r.active ? '✅' : '❌'}</td>
               <td>
                 <button class="btn btn-outline btn-sm" onclick='editItem("campaigns", ${JSON.stringify(r).replace(/'/g, "&#39;")})'>Düzenle</button>
                 <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteItem('campaigns', ${r.id})">Sil</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;}).join('')}
         </tbody>
       </table></div>`
   }); },

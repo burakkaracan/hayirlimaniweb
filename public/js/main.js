@@ -170,18 +170,107 @@ function toggleSearch(open) {
   if (open) document.getElementById('search-input').focus();
 }
 
+async function pfcContactSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = form.querySelector('.pfc-submit-btn');
+  const email = form.querySelector('#pfc-email').value.trim();
+  const body = form.querySelector('#pfc-message').value.trim();
+  if (!email || !body) return;
+  btn.disabled = true;
+  btn.textContent = 'Gönderiliyor...';
+  try {
+    await api('/api/messages', { method: 'POST', body: { email, body, name: email } });
+    form.innerHTML = '<div class="pfc-success">' + svgIcon('check') + ' Mesajınız iletildi, en kısa sürede dönüş yapacağız.</div>';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Gönder';
+  }
+}
+
+function renderPreFooterCTA() {
+  const host = document.getElementById('pre-footer-cta');
+  if (!host) return;
+  const s = appSettings;
+  host.innerHTML = `
+    <div class="pfc-wrapper">
+      <div class="pfc-section">
+        <div class="pfc-brand-panel">
+          <svg class="pfc-ripples" viewBox="0 0 400 400" fill="none" aria-hidden="true">
+            <circle cx="200" cy="200" r="60"  stroke="rgba(26,61,92,0.10)" stroke-width="1.5"/>
+            <circle cx="200" cy="200" r="105" stroke="rgba(26,61,92,0.07)" stroke-width="1.5"/>
+            <circle cx="200" cy="200" r="155" stroke="rgba(26,61,92,0.05)" stroke-width="1.5"/>
+            <circle cx="200" cy="200" r="210" stroke="rgba(26,61,92,0.03)" stroke-width="1.5"/>
+          </svg>
+          <img src="/images/icon.png" alt="Hayır Limanı" class="pfc-logo" />
+        </div>
+        <div class="pfc-content-panel">
+          <div class="pfc-eyebrow">Hayır Limanı Yardım Derneği</div>
+          <h2 class="pfc-title">
+            <span class="pfc-title-main">İyilik için </span><span class="pfc-title-accent">Bir Araya Gelelim</span>
+          </h2>
+          <p class="pfc-desc">Dünyanın dört bir yanında ihtiyaç sahiplerine ulaşıyor, toplumsal dayanışmanın gücünü hayata geçiriyoruz. Siz de bu köprünün bir parçası olabilirsiniz.</p>
+          <div class="pfc-channel-icons">
+            <a href="${s.ig || '#'}" target="_blank" aria-label="Instagram" class="pfc-channel-icon">${svgIcon('ig')}</a>
+            <a href="${s.fb || '#'}" target="_blank" aria-label="Facebook"  class="pfc-channel-icon">${svgIcon('fb')}</a>
+            <a href="${s.yt || '#'}" target="_blank" aria-label="YouTube"   class="pfc-channel-icon">${svgIcon('yt')}</a>
+            <a href="${s.tw || '#'}" target="_blank" aria-label="Twitter/X" class="pfc-channel-icon">${svgIcon('tw')}</a>
+          </div>
+        </div>
+        <div class="pfc-form-panel">
+          <div class="pfc-form-title">${svgIcon('mail')} Bize Yazın</div>
+          <form onsubmit="pfcContactSubmit(event)" autocomplete="off">
+            <textarea id="pfc-message" placeholder="Mesajınız..." class="pfc-input pfc-textarea" rows="3" required></textarea>
+            <div class="pfc-form-bottom">
+              <input id="pfc-email" type="email" placeholder="E-posta adresiniz" class="pfc-input" required />
+              <button type="submit" class="btn btn-primary pfc-submit-btn">
+                ${svgIcon('send')} Gönder
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function copyIban() {
+  const txt = document.getElementById('footer-iban-text')?.textContent?.trim();
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('iban-copy-btn');
+    if (!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML = svgIcon('check');
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = svgIcon('iban'); }, 2000);
+  });
+}
+
 function renderFooter() {
   const host = document.getElementById('site-footer');
   if (!host) return;
   const s = appSettings;
   host.innerHTML = `
+    <img src="/images/icon-white.png" class="footer-watermark" alt="" aria-hidden="true" />
+    <div class="footer-topbar">
+      <div class="container footer-topbar-inner">
+        <div class="footer-brand">
+          <img src="/images/logo-white.png" alt="Hayır Limanı" class="logo-img logo-img-footer" />
+          <span class="footer-slogan">${s.slogan || ''}</span>
+        </div>
+        <div class="footer-topbar-sep"></div>
+        <div class="footer-topbar-contact">
+          <span class="footer-contact-label">İletişim</span>
+          <a href="tel:${(s.phone||'').replace(/\s/g,'')}" class="footer-phone">${s.phone || ''}</a>
+          <a href="mailto:${s.email||''}" class="footer-email-link">${s.email || ''}</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-hr-wrap"><div class="container"><hr class="footer-hr"/></div></div>
     <div class="footer-main">
       <div class="container footer-grid">
         <div class="footer-about">
-          <div>
-            <img src="/images/logo.png" alt="Hayır Limanı Yardım Derneği" class="logo-img logo-img-footer" />
-          </div>
-          <p style="margin-top:16px">${s.about_body ? s.about_body.slice(0, 200) + '...' : ''}</p>
+          <p class="footer-about-text">${s.about_body ? s.about_body.slice(0, 180) + '…' : ''}</p>
           <div class="footer-socials">
             <a href="${s.tw || '#'}" target="_blank" aria-label="Twitter">${svgIcon('tw')}</a>
             <a href="${s.yt || '#'}" target="_blank" aria-label="YouTube">${svgIcon('yt')}</a>
@@ -189,7 +278,7 @@ function renderFooter() {
             <a href="${s.fb || '#'}" target="_blank" aria-label="Facebook">${svgIcon('fb')}</a>
           </div>
         </div>
-        <div>
+        <div class="footer-col-kurumsal">
           <h4>Kurumsal</h4>
           <a href="/hakkimizda.html">Hakkımızda</a>
           <a href="/yetkili-kurullar.html">Yetkili Kurullar</a>
@@ -203,24 +292,29 @@ function renderFooter() {
           <a href="/bagis-yap.html?kat=kurban">Kurban</a>
           <a href="/bagis-yap.html?kat=su-kuyusu">Su Kuyusu</a>
         </div>
-        <div>
-          <h4>Bülten & Bağış</h4>
-          <p style="font-size:.85rem">Yardım çalışmalarımızdan haberdar olmak için e-posta aboneliği.</p>
+        <div class="footer-newsletter-col">
+          <h4>Bülten</h4>
+          <p class="footer-nl-desc">Yardım çalışmalarımızdan haberdar olmak için abone olun.</p>
           <form class="newsletter" onsubmit="subscribeNewsletter(event)">
             <input type="email" name="email" placeholder="E-posta adresiniz" required />
             <button type="submit" class="btn btn-accent">${svgIcon('check')} Abone Ol</button>
           </form>
           <div class="iban-box">
             <small>Bağış IBAN</small>
-            <strong>${s.iban || ''}</strong>
-            <div style="font-size:.8rem; margin-top:4px;">${s.iban_holder || ''}</div>
+            <div class="iban-row">
+              <strong id="footer-iban-text">${s.iban || ''}</strong>
+              <button id="iban-copy-btn" class="iban-copy-btn" onclick="copyIban()" title="IBAN'ı Kopyala">${svgIcon('iban')}</button>
+            </div>
+            <div class="iban-holder">${s.iban_holder || ''}</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="container footer-bottom">
-      <div>© ${new Date().getFullYear()} Hayır Limanı Derneği — Tüm hakları saklıdır.</div>
-      <div>${s.address || ''}</div>
+    <div class="footer-bottom-wrap">
+      <div class="container footer-bottom">
+        <div>© ${new Date().getFullYear()} Hayır Limanı Derneği — Tüm hakları saklıdır.</div>
+        <div>${s.address || ''}</div>
+      </div>
     </div>
   `;
 }
@@ -234,7 +328,7 @@ function renderWidgets() {
   const s = appSettings;
   const wa = document.createElement('a');
   wa.className = 'wa-float';
-  wa.href = `https://wa.me/${s.whatsapp || '905530232173'}?text=${encodeURIComponent('Merhaba Hayır Limanı Derneği, bilgi almak istiyorum.')}`;
+  wa.href = `https://wa.me/${s.whatsapp || '905368217979'}?text=${encodeURIComponent('Merhaba Hayır Limanı Derneği, bilgi almak istiyorum.')}`;
   wa.target = '_blank'; wa.rel = 'noopener';
   wa.setAttribute('aria-label', 'WhatsApp');
   wa.innerHTML = svgIcon('wa');
@@ -265,7 +359,7 @@ function renderWidgets() {
     <div class="chat-body" id="chat-body">
       <div class="chat-msg admin">Merhaba! Hayır Limanı Derneği canlı destek hattına hoş geldiniz. Mesajınızı yazın, en kısa sürede dönüş yapalım.</div>
     </div>
-    <a class="chat-wa-btn" href="https://wa.me/${s.whatsapp || '905530232173'}" target="_blank">WhatsApp'tan İletişime Geç</a>
+    <a class="chat-wa-btn" href="https://wa.me/${s.whatsapp || '905368217979'}" target="_blank">WhatsApp'tan İletişime Geç</a>
     <div id="chat-emoji-panel" class="chat-emoji-panel" style="display:none">
       ${CHAT_EMOJIS.map(em => `<button type="button" onclick="chatInsertEmoji('${em}')">${em}</button>`).join('')}
     </div>
@@ -427,6 +521,7 @@ function qs(k) { return new URLSearchParams(location.search).get(k); }
 (async () => {
   await Promise.all([loadSettings(), loadMe()]);
   renderHeader();
+  renderPreFooterCTA();
   renderFooter();
   renderWidgets();
   window.dispatchEvent(new CustomEvent('app-ready'));

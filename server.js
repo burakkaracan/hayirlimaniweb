@@ -112,7 +112,10 @@ app.get('/api/categories', (_req, res) => {
   res.json(db.prepare('SELECT * FROM categories WHERE active=1 ORDER BY sort_order').all());
 });
 app.get('/api/campaigns', (_req, res) => {
-  res.json(db.prepare('SELECT * FROM campaigns WHERE active=1 ORDER BY id DESC').all());
+  res.json(db.prepare('SELECT * FROM campaigns WHERE active=1 AND completed=0 ORDER BY id DESC').all());
+});
+app.get('/api/campaigns-all', (_req, res) => {
+  res.json(db.prepare('SELECT * FROM campaigns WHERE active=1 ORDER BY completed ASC, id DESC').all());
 });
 app.get('/api/campaigns/:slug', (req, res) => {
   const c = db.prepare('SELECT * FROM campaigns WHERE slug=?').get(req.params.slug);
@@ -293,6 +296,10 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
     }
     if (d.campaign_id) {
       db.prepare('UPDATE campaigns SET raised=raised+?, donor_count=donor_count+1 WHERE id=?').run(d.amount, d.campaign_id);
+      const camp = db.prepare('SELECT raised, goal FROM campaigns WHERE id=?').get(d.campaign_id);
+      if (camp && camp.goal > 0 && camp.raised >= camp.goal) {
+        db.prepare('UPDATE campaigns SET completed=1 WHERE id=?').run(d.campaign_id);
+      }
     }
     res.json({ ok: true });
   } catch (err) {
@@ -337,16 +344,19 @@ app.delete('/api/admin/categories/:id', requireAdmin, (req, res) => {
 });
 
 // campaigns CRUD
+app.get('/api/admin/campaigns', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM campaigns ORDER BY completed ASC, id DESC').all());
+});
 app.post('/api/admin/campaigns', requireAdmin, (req, res) => {
-  const { slug, title, summary, body, cover_image, goal, active } = req.body;
-  const info = db.prepare('INSERT INTO campaigns(slug,title,summary,body,cover_image,goal,active) VALUES(?,?,?,?,?,?,?)')
-    .run(slug, title, summary || '', body || '', cover_image || '', goal || 0, active ?? 1);
+  const { slug, title, summary, body, cover_image, goal, active, completed } = req.body;
+  const info = db.prepare('INSERT INTO campaigns(slug,title,summary,body,cover_image,goal,active,completed) VALUES(?,?,?,?,?,?,?,?)')
+    .run(slug, title, summary || '', body || '', cover_image || '', goal || 0, active ?? 1, completed ?? 0);
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/campaigns/:id', requireAdmin, (req, res) => {
-  const { slug, title, summary, body, cover_image, goal, raised, donor_count, active } = req.body;
-  db.prepare('UPDATE campaigns SET slug=?,title=?,summary=?,body=?,cover_image=?,goal=?,raised=?,donor_count=?,active=? WHERE id=?')
-    .run(slug, title, summary || '', body || '', cover_image || '', goal || 0, raised || 0, donor_count || 0, active ?? 1, req.params.id);
+  const { slug, title, summary, body, cover_image, goal, raised, donor_count, active, completed } = req.body;
+  db.prepare('UPDATE campaigns SET slug=?,title=?,summary=?,body=?,cover_image=?,goal=?,raised=?,donor_count=?,active=?,completed=? WHERE id=?')
+    .run(slug, title, summary || '', body || '', cover_image || '', goal || 0, raised || 0, donor_count || 0, active ?? 1, completed ?? 0, req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/campaigns/:id', requireAdmin, (req, res) => {
