@@ -356,15 +356,15 @@ app.delete('/api/admin/campaigns/:id', requireAdmin, (req, res) => {
 
 // activities CRUD
 app.post('/api/admin/activities', requireAdmin, (req, res) => {
-  const { slug, title, short_description, body, cover_image, location, date, active } = req.body;
-  const info = db.prepare('INSERT INTO activities(slug,title,short_description,body,cover_image,location,date,active) VALUES(?,?,?,?,?,?,?,?)')
-    .run(slug, title, short_description || '', body || '', cover_image || '', location || '', date || '', active ?? 1);
+  const { slug, title, short_description, body, cover_image, location, date, active, regions } = req.body;
+  const info = db.prepare('INSERT INTO activities(slug,title,short_description,body,cover_image,location,date,active,regions) VALUES(?,?,?,?,?,?,?,?,?)')
+    .run(slug, title, short_description || '', body || '', cover_image || '', location || '', date || '', active ?? 1, regions || '');
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/activities/:id', requireAdmin, (req, res) => {
-  const { slug, title, short_description, body, cover_image, location, date, active } = req.body;
-  db.prepare('UPDATE activities SET slug=?,title=?,short_description=?,body=?,cover_image=?,location=?,date=?,active=? WHERE id=?')
-    .run(slug, title, short_description || '', body || '', cover_image || '', location || '', date || '', active ?? 1, req.params.id);
+  const { slug, title, short_description, body, cover_image, location, date, active, regions } = req.body;
+  db.prepare('UPDATE activities SET slug=?,title=?,short_description=?,body=?,cover_image=?,location=?,date=?,active=?,regions=? WHERE id=?')
+    .run(slug, title, short_description || '', body || '', cover_image || '', location || '', date || '', active ?? 1, regions || '', req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/activities/:id', requireAdmin, (req, res) => {
@@ -547,6 +547,52 @@ app.post('/api/admin/upload', requireAdmin, upload.single('file'), (req, res) =>
 // subscribers
 app.get('/api/admin/subscribers', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT * FROM subscribers ORDER BY id DESC').all());
+});
+
+// ---------- Project Regions & Projects (public) ----------
+app.get('/api/project-regions', (_req, res) => {
+  res.json(db.prepare('SELECT * FROM project_regions ORDER BY sort_order').all());
+});
+app.get('/api/projects', (req, res) => {
+  const { region } = req.query;
+  let sql = "SELECT * FROM activities WHERE active=1 AND regions IS NOT NULL AND regions != ''";
+  const params = [];
+  if (region) {
+    sql += " AND (',' || regions || ',') LIKE ('%,' || ? || ',%')";
+    params.push(region);
+  }
+  sql += ' ORDER BY date DESC';
+  res.json(db.prepare(sql).all(...params));
+});
+
+// ---------- Project Regions & Projects (admin) ----------
+app.get('/api/admin/project-regions', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM project_regions ORDER BY sort_order').all());
+});
+app.put('/api/admin/project-regions/:slug', requireAdmin, (req, res) => {
+  const { name, description, sort_order } = req.body;
+  db.prepare('UPDATE project_regions SET name=?,description=?,sort_order=? WHERE slug=?')
+    .run(name || '', description || '', parseInt(sort_order) || 0, req.params.slug);
+  res.json({ ok: true });
+});
+app.get('/api/admin/projects', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT * FROM projects ORDER BY region_slug, sort_order, id').all());
+});
+app.post('/api/admin/projects', requireAdmin, (req, res) => {
+  const { slug, title, cover_image, progress, region_slug, link, active, sort_order } = req.body;
+  const info = db.prepare('INSERT INTO projects(slug,title,cover_image,progress,region_slug,link,active,sort_order) VALUES(?,?,?,?,?,?,?,?)')
+    .run(slug || '', title, cover_image || '', parseInt(progress) || 0, region_slug || '', link || '', active ?? 1, parseInt(sort_order) || 0);
+  res.json({ ok: true, id: info.lastInsertRowid });
+});
+app.put('/api/admin/projects/:id', requireAdmin, (req, res) => {
+  const { slug, title, cover_image, progress, region_slug, link, active, sort_order } = req.body;
+  db.prepare('UPDATE projects SET slug=?,title=?,cover_image=?,progress=?,region_slug=?,link=?,active=?,sort_order=? WHERE id=?')
+    .run(slug || '', title, cover_image || '', parseInt(progress) || 0, region_slug || '', link || '', active ?? 1, parseInt(sort_order) || 0, req.params.id);
+  res.json({ ok: true });
+});
+app.delete('/api/admin/projects/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM projects WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
 });
 
 // ---------- Fallback ----------

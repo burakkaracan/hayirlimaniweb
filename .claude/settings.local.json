@@ -25,7 +25,9 @@
       "Bash(curl -s http://localhost:3000)",
       "Bash(curl -s http://localhost:3000/css/style.css)",
       "Bash(python -c ' *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(taskkill //F //IM node.exe)"
     ]
   }
 }

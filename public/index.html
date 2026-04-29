@@ -48,7 +48,7 @@
     <section class="section">
       <div class="section-head">
         <div class="eyebrow">Bağış Türleri</div>
-        <h2>Hangi alanda destek olmak istersiniz?</h2>
+        <h2>Hangi alanda destek olmak <span class="heading-accent">istersiniz?</span></h2>
         <p>Sizin için anlamlı olan bir çalışmayı seçerek bağışınızı ihtiyaç sahibine ulaştırabilirsiniz.</p>
       </div>
       <div class="cat-tabs-wrap">
@@ -62,8 +62,8 @@
       <div class="amount-picker">
         <div class="grid-2" style="align-items:center; gap:40px;">
           <div>
-            <div class="eyebrow" style="color:var(--accent-dark); font-weight:600; letter-spacing:3px; text-transform:uppercase; font-size:.8rem;">Hızlı Tutar</div>
-            <h3>Bağışınız, birinin umudu olsun</h3>
+            <div class="eyebrow" style="color:var(--accent-dark); font-weight:600; letter-spacing:3px; text-transform:uppercase; font-size:.8rem;">Genel Bağış</div>
+            <h3>Bağışınız, birinin <span class="heading-accent">umudu olsun</span></h3>
             <p class="sub">Hazır tutarlardan birini seçin ya da kendi tutarınızı girin. Her destek yerini bulur.</p>
           </div>
           <div>
@@ -84,11 +84,53 @@
       </div>
     </section>
 
+  </div><!-- /container -->
+
+  <!-- GÜNCEL PROJELER -->
+  <section class="gp-section" id="guncel-projeler">
+    <div class="container">
+      <div class="gp-layout">
+        <!-- Sol panel -->
+        <div class="gp-left">
+          <h2 class="gp-heading">
+            <span class="line1">Güncel</span>
+            <span class="line2">Projeler</span>
+            <span class="gp-divider"></span>
+          </h2>
+          <div class="gp-dropdown" id="gp-dropdown">
+            <button class="gp-dropdown-toggle" type="button" onclick="gpToggleDropdown(event)">
+              <span class="gp-dropdown-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </span>
+              <span class="gp-dropdown-name" id="gp-dropdown-name">Yükleniyor…</span>
+              <span class="gp-dropdown-arrow">
+                <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+              </span>
+            </button>
+            <div class="gp-dropdown-menu" id="gp-dropdown-menu"></div>
+          </div>
+          <p class="gp-desc" id="gp-desc"></p>
+          <a href="/faaliyetler.html" class="gp-all-link">TÜM GÜNCEL PROJELER &rarr;</a>
+        </div>
+        <!-- Sağ: kartlar -->
+        <div class="gp-right">
+          <div class="gp-cards-viewport" id="gp-cards-viewport">
+            <div class="gp-cards" id="gp-cards">
+              <div class="gp-empty-state">Yükleniyor…</div>
+            </div>
+          </div>
+          <button class="gp-next-btn" id="gp-next-btn" type="button" title="Sonraki">&#8250;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
     <!-- CAMPAIGNS -->
     <section class="section">
       <div class="section-head">
         <div class="eyebrow">Aktif Kampanyalar</div>
-        <h2>Kampanyalarımıza Destek Olun</h2>
+        <h2>Kampanyalarımıza <span class="heading-accent">Destek Olun</span></h2>
         <p>Belirlenen hedeflerle yürüttüğümüz kampanyaların ilerleyişini takip edebilir, dilediğiniz zaman katkı sunabilirsiniz.</p>
       </div>
       <div class="campaigns" id="campaigns"></div>
@@ -319,7 +361,7 @@
           <h3 class="cat-panel-title">${c.title}</h3>
           <p class="cat-panel-desc">${desc}</p>
           <div class="cat-panel-actions">
-            <a href="/bagis-yap.html?kat=${c.slug}" class="btn btn-primary">Bağış Yap</a>
+            <a href="/bagis-yap.html?kat=${c.slug}" class="btn btn-accent">${svgIcon('heart')} Bağış Yap</a>
           </div>
         </div>
         <div>${media}</div>
@@ -380,10 +422,117 @@
       location.href = `/bagis-yap.html?tutar=${amt}`;
     }
 
+    // ===== Güncel Projeler =====
+    let _gpRegions = [];
+    let _gpActiveSlug = null;
+    let _gpHasProjects = {};
+
+    function gpToggleDropdown(e) {
+      e.stopPropagation();
+      document.getElementById('gp-dropdown').classList.toggle('open');
+    }
+
+    async function loadGuncelProjeler() {
+      _gpRegions = await api('/api/project-regions');
+      if (!_gpRegions.length) return;
+
+      const allProjects = await api('/api/projects');
+      _gpHasProjects = {};
+      allProjects.forEach(p => {
+        (p.regions || '').split(',').filter(Boolean).forEach(slug => { _gpHasProjects[slug] = true; });
+      });
+
+      const firstWithData = _gpRegions.find(r => _gpHasProjects[r.slug]);
+      _gpActiveSlug = firstWithData ? firstWithData.slug : _gpRegions[0].slug;
+
+      gpRenderDropdown();
+      await gpLoadRegion(_gpActiveSlug);
+
+      document.addEventListener('click', () => {
+        document.getElementById('gp-dropdown')?.classList.remove('open');
+      });
+      document.getElementById('gp-next-btn')?.addEventListener('click', () => {
+        document.getElementById('gp-cards-viewport')?.scrollBy({ left: 256, behavior: 'smooth' });
+      });
+
+      const vp = document.getElementById('gp-cards-viewport');
+      if (vp) {
+        let isDragging = false, startX = 0, scrollStart = 0;
+        vp.addEventListener('mousedown', e => {
+          isDragging = true;
+          startX = e.pageX;
+          scrollStart = vp.scrollLeft;
+          vp.style.cursor = 'grabbing';
+          vp.style.userSelect = 'none';
+        });
+        document.addEventListener('mousemove', e => {
+          if (!isDragging) return;
+          vp.scrollLeft = scrollStart - (e.pageX - startX);
+        });
+        document.addEventListener('mouseup', () => {
+          isDragging = false;
+          vp.style.cursor = '';
+          vp.style.userSelect = '';
+        });
+      }
+    }
+
+    function gpRenderDropdown() {
+      const active = _gpRegions.find(r => r.slug === _gpActiveSlug) || _gpRegions[0];
+      document.getElementById('gp-dropdown-name').textContent = active.name;
+      document.getElementById('gp-dropdown-menu').innerHTML = _gpRegions.map(r => {
+        const hasData = !!_gpHasProjects[r.slug];
+        const isActive = r.slug === _gpActiveSlug;
+        return `<button class="gp-dropdown-item${isActive ? ' active' : ''}"
+          onclick="gpSelectRegion('${r.slug}')"
+          ${hasData ? '' : 'disabled'}
+          type="button">
+          ${r.name}${hasData ? '' : ' <span style="font-size:.75rem;color:#bbb">(proje yok)</span>'}
+        </button>`;
+      }).join('');
+    }
+
+    async function gpSelectRegion(slug) {
+      document.getElementById('gp-dropdown').classList.remove('open');
+      if (!_gpHasProjects[slug]) return;
+      _gpActiveSlug = slug;
+      gpRenderDropdown();
+      await gpLoadRegion(slug);
+    }
+
+    async function gpLoadRegion(slug) {
+      const region = _gpRegions.find(r => r.slug === slug);
+      document.getElementById('gp-desc').textContent = region?.description || '';
+
+      const viewport = document.getElementById('gp-cards-viewport');
+      if (viewport) viewport.scrollLeft = 0;
+
+      const projects = await api('/api/projects?region=' + slug);
+      const container = document.getElementById('gp-cards');
+      if (!projects.length) {
+        container.innerHTML = '<div class="gp-empty-state">Bu bölge için henüz faaliyet eklenmemiştir.</div>';
+        return;
+      }
+      container.innerHTML = projects.map(p => {
+        const imgStyle = p.cover_image ? `background-image:url('${p.cover_image}')` : '';
+        const href = `/faaliyet.html?slug=${p.slug}`;
+        return `
+          <div class="gp-card">
+            <div class="gp-card-img" style="${imgStyle}"></div>
+            <div class="gp-card-bottom">
+              <h4 class="gp-card-title">${p.title}</h4>
+              <a href="${href}" class="gp-card-btn" title="İncele">&#8594;</a>
+            </div>
+          </div>`;
+      }).join('');
+    }
+    // ===== End Güncel Projeler =====
+
     window.addEventListener('app-ready', () => {
       loadHero();
       loadCategories();
       loadCampaigns();
+      loadGuncelProjeler();
       document.querySelectorAll('.amount-btn').forEach(b => {
         b.addEventListener('click', () => {
           document.querySelectorAll('.amount-btn').forEach(x => x.classList.remove('active'));

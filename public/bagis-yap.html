@@ -92,23 +92,45 @@
         const subs = childrenOf(p.id);
         if (subs.length) {
           opts += `<optgroup label="${p.icon ? p.icon + ' ' : ''}${p.title}">`;
-          subs.forEach(s => { opts += `<option value="${s.id}" data-slug="${s.slug}" data-price="${s.price}">${s.title}</option>`; });
+          subs.forEach(s => { opts += `<option value="${s.id}" data-slug="${s.slug}" data-price="${s.price}" data-fixed="${s.fixed_price || 0}">${s.title}</option>`; });
           opts += '</optgroup>';
         } else {
-          opts += `<option value="${p.id}" data-slug="${p.slug}" data-price="${p.price}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
+          opts += `<option value="${p.id}" data-slug="${p.slug}" data-price="${p.price}" data-fixed="${p.fixed_price || 0}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
         }
       });
       sel.innerHTML = opts;
+
+      sel.addEventListener('change', () => {
+        const opt = sel.options[sel.selectedIndex];
+        const amtInput = document.getElementById('amount');
+        const isFixed = opt?.dataset?.fixed === '1';
+        const price = parseFloat(opt?.dataset?.price || 0);
+        if (isFixed && price > 0) {
+          amtInput.value = price;
+          amtInput.readOnly = true;
+          amtInput.style.background = 'var(--bg)';
+          amtInput.style.cursor = 'not-allowed';
+          amtInput.title = 'Bu bağış türünde tutar sabittir';
+        } else {
+          amtInput.readOnly = false;
+          amtInput.style.background = '';
+          amtInput.style.cursor = '';
+          amtInput.title = '';
+        }
+      });
 
       const katParam = qs('kat');
       if (katParam) {
         const opt = [...sel.options].find(o => o.dataset.slug === katParam);
         if (opt) {
           sel.value = opt.value;
-          if (opt.dataset.price > 0 && !qs('tutar')) document.getElementById('amount').value = opt.dataset.price;
+          sel.dispatchEvent(new Event('change'));
+          if (!opt.dataset.fixed || opt.dataset.fixed === '0') {
+            if (opt.dataset.price > 0 && !qs('tutar')) document.getElementById('amount').value = opt.dataset.price;
+          }
         }
       }
-      const t = qs('tutar'); if (t) document.getElementById('amount').value = t;
+      const t = qs('tutar'); if (t && !document.getElementById('amount').readOnly) document.getElementById('amount').value = t;
 
       if (!currentUser) {
         document.getElementById('guest-fields').classList.remove('hidden');

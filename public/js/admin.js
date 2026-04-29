@@ -38,6 +38,7 @@ const NAV_ICONS = {
   bulk:       _si('<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/>'),
   settings:   _si('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
   external:   _si('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
+  projects:   _si('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
 };
 
 function renderShell() {
@@ -216,24 +217,30 @@ const sections = {
       { k: 'location', label: 'Lokasyon' },
       { k: 'date', label: 'Tarih', type: 'date' },
       { k: 'active', label: 'Aktif', type: 'checkbox' },
+      { k: 'regions', label: 'Güncel Projeler Bölgeleri', type: 'regions', wide: true },
       { k: 'short_description', label: 'Kısa Açıklama', type: 'textarea', wide: true },
       { k: 'body', label: 'Detay Metni', type: 'textarea', wide: true },
     ],
     list: (rows) => `
       <div class="table-wrap"><table>
-        <thead><tr><th>Başlık</th><th>Lokasyon</th><th>Tarih</th><th>Aktif</th><th>İşlem</th></tr></thead>
+        <thead><tr><th>Başlık</th><th>Lokasyon</th><th>Tarih</th><th>Bölgeler</th><th>Aktif</th><th>İşlem</th></tr></thead>
         <tbody>
-          ${rows.map(r => `
+          ${rows.map(r => {
+            const regionLabels = { ortadogu:'Ortadoğu', balkanlar:'Balkanlar', afrika:'Afrika', 'turki-devletler':'Türkî Devletler', turkiye:'Türkiye' };
+            const regionBadges = (r.regions || '').split(',').filter(Boolean)
+              .map(s => `<span style="background:rgba(26,61,92,.1);color:var(--brand);padding:2px 8px;border-radius:999px;font-size:.72rem;white-space:nowrap">${regionLabels[s]||s}</span>`).join(' ');
+            return `
             <tr>
               <td><strong>${r.title}</strong><div class="muted" style="font-size:.8rem">${r.slug}</div></td>
               <td>${r.location || '-'}</td>
               <td>${r.date || '-'}</td>
+              <td style="min-width:130px">${regionBadges || '<span class="muted">—</span>'}</td>
               <td>${r.active ? '✅' : '❌'}</td>
               <td>
                 <button class="btn btn-outline btn-sm" onclick='editItem("activities", ${JSON.stringify(r).replace(/'/g, "&#39;")})'>Düzenle</button>
                 <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteItem('activities', ${r.id})">Sil</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;}).join('')}
         </tbody>
       </table></div>`
   }); },
@@ -576,6 +583,31 @@ function openFormModal(key, fields, row, title) {
         if (f.type === 'textarea') return `<div class="${cls}"><label>${f.label}</label><textarea name="${f.k}" rows="3">${escapeHtml(v)}</textarea></div>`;
         if (f.type === 'checkbox') return `<div class="${cls}"><label><input type="checkbox" name="${f.k}" ${v ? 'checked' : ''}/> ${f.label}</label></div>`;
         if (f.type === 'select') return `<div class="${cls}"><label>${f.label}</label><select name="${f.k}">${f.options.map(([val, lbl]) => `<option value="${val}" ${v === val ? 'selected' : ''}>${lbl}</option>`).join('')}</select></div>`;
+        if (f.type === 'regions') {
+          const REGIONS = [
+            { slug: 'ortadogu', name: 'Ortadoğu' },
+            { slug: 'balkanlar', name: 'Balkanlar' },
+            { slug: 'afrika', name: 'Afrika' },
+            { slug: 'turki-devletler', name: 'Türkî Devletler' },
+            { slug: 'turkiye', name: 'Türkiye' },
+          ];
+          window._regionVals = window._regionVals || {};
+          window._regionVals[f.k] = v || '';
+          const selected = (v || '').split(',').filter(Boolean);
+          return `<div class="${cls}">
+            <label style="display:block;margin-bottom:8px">${f.label}</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${REGIONS.map(r => {
+                const on = selected.includes(r.slug);
+                return `<button type="button"
+                  onclick="toggleRegionPill(this,'${r.slug}','${f.k}')"
+                  style="padding:7px 16px;border-radius:999px;cursor:pointer;font-size:.88rem;font-weight:${on?'600':'400'};border:2px solid ${on?'var(--brand)':'var(--border)'};background:${on?'var(--brand)':'var(--bg)'};color:${on?'#fff':'var(--text)'};transition:all .15s"
+                  data-active="${on?'1':'0'}"
+                  data-slug="${r.slug}">${r.name}</button>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }
         if (f.k === 'media_url' || f.k === 'cover_image') return `<div class="${cls}">
           <label>${f.label}</label>
           <div style="display:flex;gap:8px;align-items:center">
@@ -616,6 +648,12 @@ async function saveItem(key, id) {
   const form = document.getElementById('form-fields');
   const data = {};
   fields.forEach(f => {
+    if (f.type === 'regions') {
+      data[f.k] = (window._regionVals && window._regionVals[f.k] !== undefined)
+        ? window._regionVals[f.k]
+        : '';
+      return;
+    }
     const el = form.querySelector(`[name="${f.k}"]`);
     if (!el) return;
     if (f.type === 'checkbox') data[f.k] = el.checked ? 1 : 0;
@@ -640,6 +678,22 @@ async function deleteItem(key, id) {
   if (!confirm('Silmek istediğinize emin misiniz?')) return;
   await api(`/api/admin/${key}/${id}`, { method: 'DELETE' });
   switchSection(key);
+}
+
+function toggleRegionPill(btn, slug, fieldKey) {
+  const active = btn.dataset.active === '1';
+  const nowActive = !active;
+  btn.dataset.active = nowActive ? '1' : '0';
+  btn.style.borderColor = nowActive ? 'var(--brand)' : 'var(--border)';
+  btn.style.background  = nowActive ? 'var(--brand)' : 'var(--bg)';
+  btn.style.color       = nowActive ? '#fff'         : 'var(--text)';
+  btn.style.fontWeight  = nowActive ? '600'          : '400';
+
+  window._regionVals = window._regionVals || {};
+  const vals = (window._regionVals[fieldKey] || '').split(',').filter(Boolean);
+  if (nowActive) { if (!vals.includes(slug)) vals.push(slug); }
+  else           { const i = vals.indexOf(slug); if (i > -1) vals.splice(i, 1); }
+  window._regionVals[fieldKey] = vals.join(',');
 }
 
 function closeModal() { document.getElementById('modal').classList.remove('open'); }

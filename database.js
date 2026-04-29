@@ -138,6 +138,71 @@ try { db.exec('ALTER TABLE categories ADD COLUMN cover_image TEXT'); } catch {}
 try { db.exec("ALTER TABLE hero_slides ADD COLUMN slide_icon TEXT DEFAULT '🌙'"); } catch {}
 try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_text TEXT'); } catch {}
 try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_link TEXT'); } catch {}
+try { db.exec('ALTER TABLE activities ADD COLUMN regions TEXT DEFAULT ""'); } catch {}
+
+// Mevcut aktivitelere bölge ata (sadece bir kez çalışır)
+try {
+  const hasRegions = db.prepare("SELECT 1 FROM activities WHERE regions != '' LIMIT 1").get();
+  if (!hasRegions) {
+    [
+      ['turkiye',         'gida-kolisi-dagitimi-2025'],
+      ['turkiye',         'kis-yardimi-dogu-anadolu'],
+      ['turkiye',         'egitim-bursu-programi'],
+      ['ortadogu,afrika', 'kurban-dagitimi-2024'],
+      ['turkiye',         'ramazan-iftar-sofralari'],
+      ['afrika',          'temiz-su-kuyusu-cad'],
+    ].forEach(([regions, slug]) =>
+      db.prepare('UPDATE activities SET regions=? WHERE slug=?').run(regions, slug)
+    );
+    // Balkanlar
+    if (!db.prepare("SELECT 1 FROM activities WHERE slug='bosna-kis-yardimi' LIMIT 1").get()) {
+      db.prepare('INSERT INTO activities(slug,title,short_description,body,cover_image,location,date,regions,active) VALUES(?,?,?,?,?,?,?,?,?)').run(
+        'bosna-kis-yardimi', "Bosna'ya Kış Yardımı",
+        "Balkanlar'da kış şartlarından etkilenen ihtiyaç sahibi ailelere battaniye, gıda ve yakacak yardımı ulaştırıldı.",
+        "Bosna Hersek'te yaşayan Müslüman ailelere yönelik kış yardım programımız kapsamında 800 haneye kışlık malzeme paketi teslim edildi. Her pakette battaniye, kumanya ve yakacak malzemesi yer aldı.",
+        '', 'Bosna Hersek', '2024-12-10', 'balkanlar', 1
+      );
+    }
+    // Türkî Devletler
+    if (!db.prepare("SELECT 1 FROM activities WHERE slug='orta-asya-egitim' LIMIT 1").get()) {
+      db.prepare('INSERT INTO activities(slug,title,short_description,body,cover_image,location,date,regions,active) VALUES(?,?,?,?,?,?,?,?,?)').run(
+        'orta-asya-egitim', 'Orta Asya Eğitim Destek Programı',
+        "Kırgızistan ve Kazakistan'da yetim öğrencilere burs ve eğitim materyali desteği sağlandı.",
+        "Türkî toplulukların yaşadığı Orta Asya coğrafyasında eğitim imkânı kısıtlı öğrencilere yönelik burs programımız kapsamında 120 öğrenciye destek verildi. Öğrencilere aylık burs, kırtasiye ve kışlık giysi yardımı yapıldı.",
+        '', 'Kırgızistan / Kazakistan', '2025-02-15', 'turki-devletler', 1
+      );
+    }
+    // Ortadoğu (ek faaliyet)
+    if (!db.prepare("SELECT 1 FROM activities WHERE slug='suriye-insani-yardim' LIMIT 1").get()) {
+      db.prepare('INSERT INTO activities(slug,title,short_description,body,cover_image,location,date,regions,active) VALUES(?,?,?,?,?,?,?,?,?)').run(
+        'suriye-insani-yardim', 'Suriye İnsani Yardım Paketi',
+        "Suriye'deki yerinden edilmiş ailelere acil gıda, çadır ve hijyen malzemeleri ulaştırıldı.",
+        "Çatışma bölgelerinden kaçan ve kamplarda yaşayan Suriyeli ailelere yönelik acil insani yardım paketleri teslim edildi. Her paket bir aileye aylık temel gıda ihtiyacını karşılıyor.",
+        '', 'Suriye', '2025-01-20', 'ortadogu', 1
+      );
+    }
+  }
+} catch(e) { console.error('Regions migration error:', e.message); }
+
+try { db.exec(`CREATE TABLE IF NOT EXISTS project_regions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0
+)`); } catch {}
+try { db.exec(`CREATE TABLE IF NOT EXISTS projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT UNIQUE,
+  title TEXT NOT NULL,
+  cover_image TEXT DEFAULT '',
+  progress INTEGER DEFAULT 0,
+  region_slug TEXT DEFAULT '',
+  link TEXT DEFAULT '',
+  active INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`); } catch {}
 try { db.exec(`CREATE TABLE IF NOT EXISTS msg_labels (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT UNIQUE NOT NULL,
@@ -353,6 +418,19 @@ function seed() {
   };
   for (const [k, v] of Object.entries(defaults)) {
     if (!db.prepare('SELECT 1 FROM settings WHERE key=?').get(k)) setSetting(k, v);
+  }
+
+  const regionCount = db.prepare('SELECT COUNT(*) as c FROM project_regions').get().c;
+  if (regionCount === 0) {
+    const regions = [
+      ['ortadogu', 'Ortadoğu', 'Ortadoğu\'da süregelen kriz ve çatışmalar nedeniyle büyük acılar yaşayan kardeşlerimize gıda, sağlık ve barınma projelerimizle destek oluyoruz.', 1],
+      ['balkanlar', 'Balkanlar', 'Balkanlar\'daki Müslüman toplulukların yanında eğitim, cami inşaatı ve insani yardım projelerimizle var olmaya devam ediyoruz.', 2],
+      ['afrika', 'Afrika', 'Afrika\'nın dört bir yanında temiz su kuyuları açıyor, gıda desteği sağlıyor ve eğitim projeleriyle gelecek nesillere umut taşıyoruz.', 3],
+      ['turki-devletler', 'Türkî Devletler', 'Orta Asya\'daki Türkî toplulukların kalkınmasına katkı sunmak için insani yardım ve eğitim projelerimizi kararlılıkla sürdürüyoruz.', 4],
+      ['turkiye', 'Türkiye', 'Türkiye\'nin dört bir köşesinde ihtiyaç sahibi ailelere, yetimlere ve öğrencilere uzanan projelerimizle destek olmaya devam ediyoruz.', 5],
+    ];
+    const stmt = db.prepare('INSERT INTO project_regions(slug,name,description,sort_order) VALUES(?,?,?,?)');
+    regions.forEach(r => stmt.run(...r));
   }
 
   const menuCount = db.prepare('SELECT COUNT(*) as c FROM menus').get().c;
