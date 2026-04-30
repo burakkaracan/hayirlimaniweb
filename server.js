@@ -565,13 +565,13 @@ app.get('/api/project-regions', (_req, res) => {
 });
 app.get('/api/projects', (req, res) => {
   const { region } = req.query;
-  let sql = 'SELECT * FROM projects WHERE active=1';
+  let sql = "SELECT * FROM activities WHERE active=1 AND regions IS NOT NULL AND regions != ''";
   const params = [];
   if (region) {
-    sql += ' AND region_slug = ?';
+    sql += " AND (',' || regions || ',') LIKE ('%,' || ? || ',%')";
     params.push(region);
   }
-  sql += ' ORDER BY sort_order, id';
+  sql += ' ORDER BY date DESC';
   res.json(db.prepare(sql).all(...params));
 });
 

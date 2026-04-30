@@ -441,7 +441,7 @@
       const allProjects = await api('/api/projects');
       _gpHasProjects = {};
       allProjects.forEach(p => {
-        if (p.region_slug) _gpHasProjects[p.region_slug] = true;
+        (p.regions || '').split(',').filter(Boolean).forEach(slug => { _gpHasProjects[slug] = true; });
       });
 
       const firstWithData = _gpRegions.find(r => _gpHasProjects[r.slug]);
@@ -517,7 +517,7 @@
       }
       container.innerHTML = projects.map(p => {
         const imgStyle = p.cover_image ? `background-image:url('${p.cover_image}')` : '';
-        const href = p.link && p.link !== '#' ? p.link : '#';
+        const href = `/faaliyet.html?slug=${p.slug}`;
         return `
           <div class="gp-card">
             <div class="gp-card-img" style="${imgStyle}"></div>
