@@ -81,20 +81,91 @@ function switchSection(s) {
 
 const sections = {
   async dashboard() {
-    const stats = await api('/api/admin/stats');
-    const recent = await api('/api/admin/donations?status=pending');
+    const [stats, recent, chartData] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/donations?status=pending'),
+      api('/api/admin/donations-by-date'),
+    ]);
+
+    const si = (path) => `<svg viewBox="0 0 24 24">${path}</svg>`;
+    const ICONS = {
+      user:     si('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+      money:    si('<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>'),
+      check:    si('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
+      clock:    si('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+      campaign: si('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'),
+      msg:      si('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+    };
+
+    const card = (cls, icon, label, value) => `
+      <div class="stat-card ${cls}">
+        <div class="stat-card-head">
+          <div class="stat-label">${label}</div>
+          <div class="stat-icon">${icon}</div>
+        </div>
+        <div class="stat-value">${value}</div>
+      </div>`;
+
     document.getElementById('admin-main').innerHTML = `
       <div class="admin-head">
         <h2>Genel Bakış</h2>
         <span class="muted">Hoşgeldiniz, ${currentUser.name}</span>
       </div>
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">Toplam Bağışçı</div><div class="stat-value">${stats.totalUsers}</div></div>
-        <div class="stat-card"><div class="stat-label">Onaylı Bağış Toplamı</div><div class="stat-value">${formatTL(stats.approvedSum)}</div></div>
-        <div class="stat-card"><div class="stat-label">Onaylanan Bağış</div><div class="stat-value">${stats.approvedCount}</div></div>
-        <div class="stat-card"><div class="stat-label">Bekleyen Bildirim</div><div class="stat-value">${stats.pending}</div></div>
-        <div class="stat-card"><div class="stat-label">Aktif Kampanya</div><div class="stat-value">${stats.campaigns}</div></div>
-        <div class="stat-card"><div class="stat-label">Yeni Mesaj</div><div class="stat-value">${stats.newMessages}</div></div>
+        ${card('c-teal',   ICONS.user,     'Toplam Bağışçı',      stats.totalUsers)}
+        ${card('c-green',  ICONS.money,    'Onaylı Bağış Toplamı',formatTL(stats.approvedSum))}
+        ${card('c-blue',   ICONS.check,    'Onaylanan Bağış',     stats.approvedCount)}
+        ${card('c-amber',  ICONS.clock,    'Bekleyen Bildirim',   stats.pending)}
+        ${card('c-purple', ICONS.campaign, 'Aktif Kampanya',      stats.campaigns)}
+        ${card('c-rose',   ICONS.msg,      'Yeni Mesaj',          stats.newMessages)}
+      </div>
+      <div class="charts-row">
+        <div class="chart-card" style="flex:2;min-width:0">
+          <h3>Bağış Yoğunluğu</h3>
+          <div class="chart-range-bar">
+            <button class="active" onclick="dcRange(7,this)">7 Gün</button>
+            <button onclick="dcRange(30,this)">30 Gün</button>
+            <button onclick="dcRange(90,this)">90 Gün</button>
+            <span class="sep">|</span>
+            <input type="date" id="dc-from" /><span class="sep">—</span><input type="date" id="dc-to" />
+            <button onclick="dcCustom()">Uygula</button>
+            <span class="sep">|</span>
+            <button class="active" onclick="dcGroup('day',this)">Günlük</button>
+            <button onclick="dcGroup('month',this)">Aylık</button>
+            <button onclick="dcGroup('quarter',this)">3 Aylık</button>
+          </div>
+          <div id="donation-chart"></div>
+        </div>
+        <div class="chart-card" style="flex:1;min-width:280px">
+          <h3>Bağış Türü Dağılımı</h3>
+          <div class="chart-range-bar">
+            <button class="active" onclick="dpRange(7,this)">7 Gün</button>
+            <button onclick="dpRange(30,this)">30 Gün</button>
+            <button onclick="dpRange(90,this)">90 Gün</button>
+            <span class="sep">|</span>
+            <input type="date" id="dp-from" /><span class="sep">—</span><input type="date" id="dp-to" />
+            <button onclick="dpCustom()">Uygula</button>
+          </div>
+          <div id="donut-chart"></div>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:24px">
+        <h3>Kampanyaya Göre Bağış</h3>
+        <div class="chart-range-bar">
+          <select id="dk-campaign" onchange="dkReload()" style="padding:5px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:.82rem"></select>
+          <span class="sep">|</span>
+          <button class="active" onclick="dkRange(7,this)">7 Gün</button>
+          <button onclick="dkRange(30,this)">30 Gün</button>
+          <button onclick="dkRange(90,this)">90 Gün</button>
+          <span class="sep">|</span>
+          <input type="date" id="dk-from" /><span class="sep">—</span><input type="date" id="dk-to" />
+          <button onclick="dkCustom()">Uygula</button>
+          <span class="sep">|</span>
+          <button class="active" onclick="dkGroup('day',this)">Günlük</button>
+          <button onclick="dkGroup('month',this)">Aylık</button>
+          <button onclick="dkGroup('quarter',this)">3 Aylık</button>
+        </div>
+        <div id="campaign-chart"></div>
       </div>
       <div class="admin-section">
         <h3>Bekleyen Bağış Bildirimleri (${recent.length})</h3>
@@ -118,6 +189,222 @@ const sections = {
           </table></div>`}
       </div>
     `;
+
+    // ── Ortak yardımcılar ──────────────────────────────────────
+    let _dcChart = null, _dkChart = null;
+    let _dcGroup = 'day', _dkGroup = 'day';
+
+    function buildLabels(from, to, group) {
+      if (group === 'month') {
+        const list = []; const cur = new Date(from.slice(0,7)+'-01'); const end = new Date(to.slice(0,7)+'-01');
+        while (cur <= end) { list.push(cur.toISOString().slice(0,7)); cur.setMonth(cur.getMonth()+1); }
+        return list;
+      }
+      if (group === 'quarter') {
+        const list = []; let y = +from.slice(0,4), q = Math.ceil(+from.slice(5,7)/3);
+        const ey = +to.slice(0,4), eq = Math.ceil(+to.slice(5,7)/3);
+        while (y < ey || (y===ey && q<=eq)) { list.push(`${y}-Q${q}`); q++; if(q>4){q=1;y++;} }
+        return list;
+      }
+      // day
+      const list=[]; const cur=new Date(from); const end=new Date(to);
+      while(cur<=end){list.push(cur.toISOString().slice(0,10));cur.setDate(cur.getDate()+1);}
+      return list;
+    }
+
+    function fmtLabel(key, group) {
+      if (group === 'month') {
+        const [y,m] = key.split('-');
+        return new Date(+y,+m-1,1).toLocaleString('tr-TR',{month:'short',year:'numeric'});
+      }
+      if (group === 'quarter') return key.replace('-',' ');
+      const [,m,d] = key.split('-'); return `${d}/${m}`;
+    }
+
+    function buildDateRange(from, to) { return buildLabels(from, to, 'day'); }
+
+    function makeApexBar(el, counts, totals, keys, group, color1='#0d9488', color2='#2563eb') {
+      const labels  = keys.map(k => fmtLabel(k, group));
+      const tickAmt = keys.length > 60 ? 10 : keys.length > 20 ? 15 : keys.length;
+      const chart = new ApexCharts(el, {
+        chart: { type:'bar', height:260, toolbar:{show:false}, fontFamily:'Inter, sans-serif', animations:{enabled:true,speed:400} },
+        series: [
+          { name:'Bağış Sayısı', type:'bar',  data:counts },
+          { name:'Tutar (₺)',    type:'line', data:totals },
+        ],
+        xaxis: { categories:labels, tickAmount:tickAmt, labels:{style:{fontSize:'11px',colors:'#888'}}, axisBorder:{show:false}, axisTicks:{show:false} },
+        yaxis: [
+          { title:{text:'Adet',style:{color:color1}}, min:0, forceNiceScale:true, labels:{formatter:v=>Math.round(v)} },
+          { opposite:true, title:{text:'₺',style:{color:color2}}, min:0, labels:{formatter:v=>v>=1000?(v/1000).toFixed(0)+'K':v} },
+        ],
+        colors:[color1,color2],
+        fill:{ type:['gradient','gradient'], gradient:{type:'vertical',shadeIntensity:.4,opacityFrom:[.9,.4],opacityTo:[.6,.1]} },
+        stroke:{ width:[0,2.5], curve:'smooth' },
+        markers:{ size:[0, keys.length>30?0:4] },
+        dataLabels:{ enabled:false },
+        grid:{ borderColor:'#f0f0f0', strokeDashArray:4 },
+        tooltip:{ shared:true, intersect:false, y:[{formatter:v=>v+' adet'},{formatter:v=>'₺'+v.toLocaleString('tr-TR')}] },
+        legend:{ position:'top', horizontalAlign:'right', fontSize:'13px' },
+        plotOptions:{ bar:{ borderRadius:4, columnWidth:keys.length>30?'70%':'45%' } },
+      });
+      chart.render();
+      return chart;
+    }
+
+    async function renderDonationChart(from, to) {
+      const res  = await api(`/api/admin/donations-by-date?from=${from}&to=${to}&group=${_dcGroup}`);
+      const data = res.rows || res;
+      const keys = buildLabels(from, to, _dcGroup);
+      const countMap={}, totalMap={};
+      data.forEach(r => { countMap[r.day]=r.count; totalMap[r.day]=r.total; });
+      if (_dcChart) { _dcChart.destroy(); _dcChart=null; }
+      const el = document.getElementById('donation-chart');
+      if (!el) return;
+      _dcChart = makeApexBar(el, keys.map(k=>countMap[k]||0), keys.map(k=>totalMap[k]||0), keys, _dcGroup);
+      const fi=document.getElementById('dc-from'), ti=document.getElementById('dc-to');
+      if(fi) fi.value=from; if(ti) ti.value=to;
+    }
+
+    window.dcRange = function(days, btn) {
+      btn.closest('.chart-card').querySelectorAll('.chart-range-bar button[onclick*="dcRange"]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const to=new Date().toISOString().slice(0,10);
+      const from=new Date(Date.now()-(days-1)*86400000).toISOString().slice(0,10);
+      renderDonationChart(from,to);
+    };
+    window.dcCustom = function() {
+      const from=document.getElementById('dc-from')?.value, to=document.getElementById('dc-to')?.value;
+      if(!from||!to||from>to) return alert('Geçerli bir tarih aralığı seçin.');
+      renderDonationChart(from,to);
+    };
+    window.dcGroup = function(g, btn) {
+      _dcGroup = g;
+      btn.closest('.chart-range-bar').querySelectorAll('button[onclick*="dcGroup"]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const from=document.getElementById('dc-from')?.value, to=document.getElementById('dc-to')?.value;
+      if(from&&to) renderDonationChart(from,to);
+    };
+
+    // --- Donut grafik ---
+    let _dpChart = null;
+
+    async function renderDonutChart(from, to) {
+      const res  = await api(`/api/admin/donations-by-category?from=${from}&to=${to}`);
+      const data = res.rows || res;
+      const el   = document.getElementById('donut-chart');
+      if (!el) return;
+
+      if (_dpChart) { _dpChart.destroy(); _dpChart = null; }
+
+      if (!data.length) {
+        el.innerHTML = '<div style="height:260px;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:.9rem">Bu aralıkta bağış yok</div>';
+        return;
+      }
+
+      _dpChart = new ApexCharts(el, {
+        chart: { type: 'donut', height: 300, fontFamily: 'Inter, sans-serif', animations: { speed: 400 } },
+        series: data.map(r => r.total),
+        labels: data.map(r => r.label),
+        colors: ['#0d9488','#2563eb','#7c3aed','#d97706','#e11d48','#16a34a','#0891b2','#9333ea'],
+        plotOptions: {
+          pie: {
+            donut: {
+              size: '65%',
+              labels: {
+                show: true,
+                value: { formatter: v => '₺' + Number(v).toLocaleString('tr-TR') },
+                total: { show: true, label: 'Toplam', formatter: w => '₺' + w.globals.seriesTotals.reduce((a,b) => a+b, 0).toLocaleString('tr-TR') },
+              },
+            },
+          },
+        },
+        dataLabels: { enabled: true, formatter: (val) => val.toFixed(1) + '%' },
+        legend: { position: 'bottom', fontSize: '12px' },
+        tooltip: { y: { formatter: v => '₺' + v.toLocaleString('tr-TR') } },
+      });
+      _dpChart.render();
+
+      const fi = document.getElementById('dp-from');
+      const ti = document.getElementById('dp-to');
+      if (fi) fi.value = from;
+      if (ti) ti.value = to;
+    }
+
+    window.dpRange = function(days, btn) {
+      document.querySelectorAll('#donut-chart').forEach(() => {});
+      btn.closest('.chart-card').querySelectorAll('.chart-range-bar button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const to   = new Date().toISOString().slice(0,10);
+      const from = new Date(Date.now() - (days-1)*86400000).toISOString().slice(0,10);
+      renderDonutChart(from, to);
+    };
+
+    window.dpCustom = function() {
+      const from = document.getElementById('dp-from')?.value;
+      const to   = document.getElementById('dp-to')?.value;
+      if (!from || !to || from > to) return alert('Geçerli bir tarih aralığı seçin.');
+      renderDonutChart(from, to);
+    };
+
+    // ── Kampanya grafiği ──────────────────────────────────────
+    let _dkCampaignId = 'all';
+
+    async function renderCampaignChart(from, to) {
+      const res  = await api(`/api/admin/donations-by-campaign?campaign_id=${_dkCampaignId}&from=${from}&to=${to}&group=${_dkGroup}`);
+      const data = res.rows || [];
+      const campaigns = res.campaigns || [];
+
+      // Dropdown'u doldur (ilk seferinde)
+      const sel = document.getElementById('dk-campaign');
+      if (sel && sel.options.length <= 1) {
+        sel.innerHTML = '<option value="all">Tüm Kampanyalar</option>' +
+          campaigns.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('');
+        sel.value = _dkCampaignId;
+      }
+
+      const keys = buildLabels(from, to, _dkGroup);
+      const countMap={}, totalMap={};
+      data.forEach(r => { countMap[r.day]=r.count; totalMap[r.day]=r.total; });
+
+      if (_dkChart) { _dkChart.destroy(); _dkChart=null; }
+      const el = document.getElementById('campaign-chart');
+      if (!el) return;
+      _dkChart = makeApexBar(el, keys.map(k=>countMap[k]||0), keys.map(k=>totalMap[k]||0), keys, _dkGroup, '#7c3aed', '#d97706');
+      const fi=document.getElementById('dk-from'), ti=document.getElementById('dk-to');
+      if(fi) fi.value=from; if(ti) ti.value=to;
+    }
+
+    window.dkReload = function() {
+      _dkCampaignId = document.getElementById('dk-campaign')?.value || 'all';
+      const from=document.getElementById('dk-from')?.value, to=document.getElementById('dk-to')?.value;
+      if(from&&to) renderCampaignChart(from,to);
+    };
+    window.dkRange = function(days, btn) {
+      btn.closest('.chart-card').querySelectorAll('.chart-range-bar button[onclick*="dkRange"]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const to=new Date().toISOString().slice(0,10);
+      const from=new Date(Date.now()-(days-1)*86400000).toISOString().slice(0,10);
+      renderCampaignChart(from,to);
+    };
+    window.dkCustom = function() {
+      const from=document.getElementById('dk-from')?.value, to=document.getElementById('dk-to')?.value;
+      if(!from||!to||from>to) return alert('Geçerli bir tarih aralığı seçin.');
+      renderCampaignChart(from,to);
+    };
+    window.dkGroup = function(g, btn) {
+      _dkGroup = g;
+      btn.closest('.chart-range-bar').querySelectorAll('button[onclick*="dkGroup"]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const from=document.getElementById('dk-from')?.value, to=document.getElementById('dk-to')?.value;
+      if(from&&to) renderCampaignChart(from,to);
+    };
+
+    // Sayfa açılışında 7 günü göster
+    const today = new Date().toISOString().slice(0,10);
+    const week  = new Date(Date.now() - 6*86400000).toISOString().slice(0,10);
+    renderDonationChart(week, today);
+    renderDonutChart(week, today);
+    renderCampaignChart(week, today);
   },
 
   async donations() {

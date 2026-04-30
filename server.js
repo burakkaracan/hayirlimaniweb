@@ -231,6 +231,56 @@ app.get('/api/admin/stats', requireAdmin, (_req, res) => {
   res.json({ totalUsers, pending, approvedCount: approved.c, approvedSum: approved.s, campaigns, newMessages });
 });
 
+app.get('/api/admin/donations-by-date', requireAdmin, (req, res) => {
+  const to    = req.query.to    || new Date().toISOString().slice(0, 10);
+  const from  = req.query.from  || (() => { const d = new Date(to); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
+  const group = req.query.group || 'day';
+  const fmt   = group === 'month'   ? "strftime('%Y-%m', created_at)"
+              : group === 'quarter' ? "(strftime('%Y', created_at) || '-Q' || ((CAST(strftime('%m', created_at) AS INTEGER) - 1) / 3 + 1))"
+              : "date(created_at)";
+  const rows = db.prepare(`
+    SELECT ${fmt} as day, COUNT(*) as count, COALESCE(SUM(amount),0) as total
+    FROM donations WHERE date(created_at) BETWEEN ? AND ?
+    GROUP BY day ORDER BY day
+  `).all(from, to);
+  res.json({ rows, from, to });
+});
+
+app.get('/api/admin/donations-by-category', requireAdmin, (req, res) => {
+  const to   = req.query.to   || new Date().toISOString().slice(0, 10);
+  const from = req.query.from || (() => { const d = new Date(to); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
+  const rows = db.prepare(`
+    SELECT
+      COALESCE(c.title, ca.title, 'Genel') AS label,
+      COUNT(*) AS count,
+      COALESCE(SUM(d.amount), 0) AS total
+    FROM donations d
+    LEFT JOIN categories c  ON d.category_id  = c.id
+    LEFT JOIN campaigns  ca ON d.campaign_id  = ca.id
+    WHERE date(d.created_at) BETWEEN ? AND ?
+    GROUP BY label ORDER BY total DESC
+  `).all(from, to);
+  res.json({ rows, from, to });
+});
+
+app.get('/api/admin/donations-by-campaign', requireAdmin, (req, res) => {
+  const to    = req.query.to    || new Date().toISOString().slice(0, 10);
+  const from  = req.query.from  || (() => { const d = new Date(to); d.setDate(d.getDate() - 29); return d.toISOString().slice(0, 10); })();
+  const group = req.query.group || 'day';
+  const cid   = req.query.campaign_id;
+  const fmt   = group === 'month'   ? "strftime('%Y-%m', created_at)"
+              : group === 'quarter' ? "(strftime('%Y', created_at) || '-Q' || ((CAST(strftime('%m', created_at) AS INTEGER) - 1) / 3 + 1))"
+              : "date(created_at)";
+  let sql = `SELECT ${fmt} as day, COUNT(*) as count, COALESCE(SUM(amount),0) as total
+             FROM donations WHERE date(created_at) BETWEEN ? AND ?`;
+  const params = [from, to];
+  if (cid && cid !== 'all') { sql += ' AND campaign_id = ?'; params.push(cid); }
+  sql += ' GROUP BY day ORDER BY day';
+  const rows = db.prepare(sql).all(...params);
+  const campaigns = db.prepare('SELECT id, title FROM campaigns ORDER BY title').all();
+  res.json({ rows, from, to, campaigns });
+});
+
 app.get('/api/admin/users', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT id,name,email,phone,role,tags,created_at FROM users ORDER BY id DESC').all());
 });

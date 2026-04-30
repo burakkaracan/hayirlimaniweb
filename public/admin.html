@@ -30,6 +30,11 @@
     .msg-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
     .msg-thread-item { transition: background .12s; }
     .msg-thread-item:hover { background: var(--bg); }
+    .chart-range-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .chart-range-bar button { padding:6px 14px; border-radius:6px; font-size:.82rem; font-weight:600; border:1.5px solid var(--border); background:#fff; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .chart-range-bar button.active, .chart-range-bar button:hover { border-color:var(--brand); color:var(--brand); background:#f0fdfa; }
+    .chart-range-bar input[type=date] { padding:5px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:.82rem; color:var(--text); }
+    .chart-range-bar .sep { color:var(--muted); font-size:.85rem; }
   </style>
 </head>
 <body>
@@ -39,6 +44,7 @@
 
   <div class="modal-backdrop" id="modal"><div class="modal" id="modal-body"></div></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.0/dist/apexcharts.min.js"></script>
   <script src="/js/main.js"></script>
   <script src="/js/admin.js"></script>
 </body>
