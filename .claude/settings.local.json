@@ -44,7 +44,11 @@
       "Bash(git restore *)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "WebSearch",
+      "WebFetch(domain:allshadcn.com)",
+      "WebFetch(domain:www.fonttrio.xyz)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

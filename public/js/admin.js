@@ -429,7 +429,7 @@ async function renderCategoriesSection() {
         <td>${p.active ? '✅' : '❌'}</td>
         <td style="white-space:nowrap">
           <button class="btn btn-outline btn-sm" onclick='openCategoryForm(null,${JSON.stringify(p).replace(/'/g,"&#39;")})'>Düzenle</button>
-          <button class="btn btn-outline btn-sm" onclick="openCategoryForm(${p.id},null)" style="color:var(--brand)">+ Alt</button>
+          <button class="btn btn-outline btn-sm" onclick="openCategoryForm(${p.id},null)">+ Alt</button>
           <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteCategoryItem(${p.id})">Sil</button>
         </td>
       </tr>`;
