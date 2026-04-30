@@ -33,7 +33,18 @@
       "Bash(python3 -c ' *)",
       "Bash(sqlite3 /c/hayirlimani/hayirlimaniweb/data.sqlite \"SELECT key,value FROM settings;\")",
       "Bash(pkill -f \"node server.js\")",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "Bash(git stash *)",
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "PowerShell(Get-Process | Where-Object { $_.Name -match \"node|npm|python|sqlite\" } | Select-Object Id, ProcessName, MainWindowTitle)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(openfiles *)",
+      "Bash(git checkout *)",
+      "Bash(git restore *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
