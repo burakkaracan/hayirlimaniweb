@@ -1,7 +1,5 @@
 node_modules/
-data.sqlite
 data.sqlite-shm
 data.sqlite-wal
 mail.log
-uploads/
 .DS_Store

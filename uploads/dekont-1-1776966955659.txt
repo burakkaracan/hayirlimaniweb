@@ -1,0 +1,12 @@
+HAYIR LİMANI DERNEĞİ
+Bağış Dekontu / Makbuzu
+--------------------------------
+Bağış ID: 1
+Bağışçı: Örnek Bağışçı
+E-posta: bagisci@ornek.com
+Tutar: 1500 TL
+Tarih: 23.04.2026 20:55:55
+Açıklama: Bağış
+Not: genel bağış
+
+Bu belge yasal bağış makbuzu olarak düzenlenmiştir.
