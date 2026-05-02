@@ -48,7 +48,9 @@
       "WebSearch",
       "WebFetch(domain:allshadcn.com)",
       "WebFetch(domain:www.fonttrio.xyz)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

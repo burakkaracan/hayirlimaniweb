@@ -2,4 +2,7 @@ node_modules/
 data.sqlite-shm
 data.sqlite-wal
 mail.log
+server.log
+uploads/
+.env
 .DS_Store
