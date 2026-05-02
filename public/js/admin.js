@@ -429,10 +429,10 @@ const sections = {
       <div class="admin-head"><h2>Bağışçılar / Kullanıcılar</h2></div>
       <div class="admin-section">
         <div class="table-wrap"><table>
-          <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Rol</th><th>Etiketler</th><th>Kayıt</th><th>İşlem</th></tr></thead>
-          <tbody>
+          <thead><tr><th>#</th><th>Ad</th><th>E-posta</th><th>Telefon</th><th>Rol</th><th>Etiketler</th><th>Kayıt</th><th>İşlemler</th></tr></thead>
+          <tbody id="users-tbody">
             ${users.map(u => `
-              <tr>
+              <tr id="user-row-${u.id}">
                 <td>${u.id}</td>
                 <td>${escapeHtml(u.name)}</td>
                 <td>${escapeHtml(u.email)}</td>
@@ -446,7 +446,15 @@ const sections = {
                 </td>
                 <td><input type="text" value="${u.tags || ''}" onblur="updateTags(${u.id}, this.value)" placeholder="vip,aylik" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;" /></td>
                 <td>${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
-                <td><a href="#messages" class="btn btn-ghost btn-sm">Mesajlar</a></td>
+                <td style="white-space:nowrap;display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="toggleUserDonations(${u.id})">Bağışlar</button>
+                  <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteUser(${u.id}, '${escapeHtml(u.name).replace(/'/g,'\\&#39;')}')">Sil</button>
+                </td>
+              </tr>
+              <tr id="user-donations-${u.id}" style="display:none">
+                <td colspan="8" style="padding:0;background:#f8fafc">
+                  <div id="user-donations-content-${u.id}" style="padding:16px">Yükleniyor…</div>
+                </td>
               </tr>`).join('')}
           </tbody>
         </table></div>
@@ -693,9 +701,43 @@ const sections = {
         </div>
         <button class="btn btn-primary btn-lg" onclick="saveSettings()">Ayarları Kaydet</button>
       </div>
+      <div class="admin-section" style="margin-top:24px">
+        <h3 style="margin-bottom:16px">Şifremi Değiştir</h3>
+        <div id="admin-pw-msg" class="form-msg" style="display:none"></div>
+        <div class="data-form">
+          <div><label>Mevcut Şifre</label><input type="password" id="admin-pw-current" /></div>
+          <div><label>Yeni Şifre</label><input type="password" id="admin-pw-new" /></div>
+          <div><label>Yeni Şifre Tekrar</label><input type="password" id="admin-pw-confirm" /></div>
+        </div>
+        <button class="btn btn-primary" onclick="adminChangePassword()">Şifremi Güncelle</button>
+      </div>
     `;
   },
 };
+
+async function adminChangePassword() {
+  const current = document.getElementById('admin-pw-current').value;
+  const newPw   = document.getElementById('admin-pw-new').value;
+  const confirm = document.getElementById('admin-pw-confirm').value;
+  const msg = document.getElementById('admin-pw-msg');
+  const show = (text, ok) => {
+    msg.textContent = text;
+    msg.className = 'form-msg ' + (ok ? 'success' : 'error');
+    msg.style.display = 'block';
+  };
+  if (!current || !newPw || !confirm) return show('Tüm alanları doldurun.', false);
+  if (newPw !== confirm) return show('Yeni şifreler eşleşmiyor.', false);
+  if (newPw.length < 6) return show('Yeni şifre en az 6 karakter olmalı.', false);
+  const r = await api('/api/admin/change-password', { method: 'POST', body: { currentPassword: current, newPassword: newPw } });
+  if (r.ok) {
+    show('Şifreniz başarıyla güncellendi.', true);
+    document.getElementById('admin-pw-current').value = '';
+    document.getElementById('admin-pw-new').value = '';
+    document.getElementById('admin-pw-confirm').value = '';
+  } else {
+    show(r.error || 'Bir hata oluştu.', false);
+  }
+}
 
 // ===== Categories (hierarchical) =====
 async function renderCategoriesSection() {
@@ -1041,6 +1083,50 @@ async function updateRole(id, role) {
 }
 async function updateTags(id, tags) {
   await api(`/api/admin/users/${id}/tags`, { method: 'POST', body: { tags } });
+}
+
+async function toggleUserDonations(id) {
+  const row = document.getElementById(`user-donations-${id}`);
+  const content = document.getElementById(`user-donations-content-${id}`);
+  if (row.style.display !== 'none') { row.style.display = 'none'; return; }
+  row.style.display = '';
+  const donations = await api(`/api/admin/users/${id}/donations`);
+  if (!donations.length) {
+    content.innerHTML = '<span class="muted">Bu kullanıcıya ait bağış kaydı bulunmuyor.</span>';
+    return;
+  }
+  const total = donations.filter(d => d.status === 'approved').reduce((a, b) => a + b.amount, 0);
+  content.innerHTML = `
+    <div style="font-weight:600;margin-bottom:10px">
+      Toplam ${donations.length} bağış &nbsp;·&nbsp; Onaylı toplam: <span style="color:var(--brand)">${formatTL(total)}</span>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Tarih</th><th>Kategori / Kampanya</th><th>Tutar</th><th>Durum</th><th>Not</th></tr></thead>
+      <tbody>
+        ${donations.map(d => `
+          <tr>
+            <td>${new Date(d.created_at).toLocaleDateString('tr-TR')}</td>
+            <td>${escapeHtml(d.category_title || d.campaign_title || 'Genel Bağış')}</td>
+            <td><strong>${formatTL(d.amount)}</strong></td>
+            <td><span class="badge ${d.status}">${{pending:'Bekliyor',approved:'Onaylandı',rejected:'Reddedildi'}[d.status]||d.status}</span></td>
+            <td class="muted" style="font-size:.82rem">${escapeHtml(d.note || '-')}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+async function deleteUser(id, name) {
+  if (!confirm(`"${name}" adlı kullanıcıyı silmek istediğinizden emin misiniz?\nBu işlem geri alınamaz.`)) return;
+  if (!confirm(`UYARI: "${name}" hesabı kalıcı olarak silinecek.\nOnaylamak için Tamam'a basın.`)) return;
+  const r = await api(`/api/admin/users/${id}`, { method: 'DELETE' });
+  if (r.ok) {
+    const row = document.getElementById(`user-row-${id}`);
+    const dRow = document.getElementById(`user-donations-${id}`);
+    if (row) row.remove();
+    if (dRow) dRow.remove();
+  } else {
+    alert(r.error || 'Silme işlemi başarısız.');
+  }
 }
 
 // Messages

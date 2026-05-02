@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Şifremi Unuttum — Hayır Limanı Derneği</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <div class="container">
+    <div class="form-card">
+      <h1>Şifremi Unuttum</h1>
+      <p class="muted" style="margin-bottom:20px;font-size:.95rem;">Kayıtlı e-posta adresinizi girin, yeni şifrenizi mail olarak gönderelim.</p>
+      <div class="form-msg" id="form-msg"></div>
+      <form id="reset-form" onsubmit="doReset(event)">
+        <div class="form-group">
+          <label>E-posta Adresiniz</label>
+          <input type="email" name="email" required autofocus />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg">Yeni Şifre Gönder</button>
+        <div class="form-foot">
+          <a href="/giris.html">← Giriş sayfasına dön</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="pre-footer-cta"></div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    async function doReset(e) {
+      e.preventDefault();
+      const email = e.target.email.value;
+      const msg = document.getElementById('form-msg');
+      const btn = e.target.querySelector('button[type=submit]');
+      btn.disabled = true;
+      btn.textContent = 'Gönderiliyor…';
+      const r = await api('/api/forgot-password', { method: 'POST', body: { email } });
+      if (r.ok) {
+        document.getElementById('reset-form').style.display = 'none';
+        msg.className = 'form-msg success';
+        msg.innerHTML = `<strong>Mail gönderildi!</strong><br>E-posta adresinize yeni şifreniz iletildi. Gelen kutunuzu (ve spam klasörünü) kontrol edin.`;
+        msg.style.display = 'block';
+      } else {
+        msg.className = 'form-msg error';
+        msg.textContent = r.error || 'Bir hata oluştu, lütfen tekrar deneyin.';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Yeni Şifre Gönder';
+      }
+    }
+  </script>
+</body>
+</html>

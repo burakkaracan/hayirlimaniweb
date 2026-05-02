@@ -52,10 +52,22 @@ const requireAdmin = (req, res, next) => {
 };
 
 function mailerSend(to, subject, html) {
-  // Stub mailer: stores to console + a local log. Replace with real SMTP config when available.
-  const line = `[MAIL] to=${to} subject="${subject}" at=${new Date().toISOString()}\n`;
-  fs.appendFile(path.join(__dirname, 'mail.log'), line + html + '\n---\n', () => {});
-  console.log(line);
+  if (process.env.SMTP_HOST) {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+    });
+    transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to, subject, html
+    }).catch(err => console.error('Mail gönderilemedi:', err.message));
+  } else {
+    const line = `[MAIL] to=${to} subject="${subject}" at=${new Date().toISOString()}\n`;
+    fs.appendFile(path.join(__dirname, 'mail.log'), line + html + '\n---\n', () => {});
+    console.log(line);
+  }
 }
 
 // ---------- Public settings/menu ----------
@@ -102,6 +114,33 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
+});
+
+app.post('/api/change-password', requireAuth, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Yeni şifre en az 6 karakter olmalı' });
+  const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.session.userId);
+  if (!bcrypt.compareSync(currentPassword, u.password_hash)) return res.status(400).json({ error: 'Mevcut şifre hatalı' });
+  const u2 = db.prepare('SELECT name,email FROM users WHERE id=?').get(req.session.userId);
+  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(newPassword, 10), req.session.userId);
+  mailerSend(u2.email, 'Şifreniz Değiştirildi',
+    `<p>Sayın ${u2.name},</p><p>Hesabınızın şifresi başarıyla güncellendi.</p><p>Bu işlemi siz yapmadıysanız lütfen hemen <a href="/iletisim.html">bizimle iletişime geçin</a>.</p><p>Hayır Limanı Yardım Derneği</p>`);
+  res.json({ ok: true });
+});
+
+app.post('/api/forgot-password', (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'E-posta zorunlu' });
+  const u = db.prepare('SELECT * FROM users WHERE email=?').get(email);
+  if (!u) return res.json({ ok: true }); // E-posta varlığını açıklamıyoruz
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let newPw = '';
+  for (let i = 0; i < 10; i++) newPw += chars[Math.floor(Math.random() * chars.length)];
+  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(newPw, 10), u.id);
+  mailerSend(u.email, 'Hayır Limanı — Yeni Şifreniz',
+    `<p>Sayın ${u.name},</p><p>Yeni şifreniz: <strong style="font-size:1.2em;letter-spacing:1px">${newPw}</strong></p><p>Giriş yaptıktan sonra profilinizden şifrenizi değiştirmenizi öneririz.</p><p>Hayır Limanı Yardım Derneği</p>`);
+  res.json({ ok: true });
 });
 
 // ---------- Content (public) ----------
@@ -170,6 +209,13 @@ app.post('/api/donations', (req, res) => {
   const info = db.prepare(`INSERT INTO donations(user_id,user_name,user_email,user_phone,category_id,campaign_id,amount,note)
     VALUES(?,?,?,?,?,?,?,?)`)
     .run(userId, uName || 'Misafir', uEmail || '', uPhone, category_id || null, campaign_id || null, amt, note || '');
+  if (uEmail) {
+    const catTitle = category_id ? db.prepare('SELECT title FROM categories WHERE id=?').get(category_id)?.title : null;
+    const campTitle = campaign_id ? db.prepare('SELECT title FROM campaigns WHERE id=?').get(campaign_id)?.title : null;
+    const target = catTitle || campTitle || 'Genel Bağış';
+    mailerSend(uEmail, 'Bağış Bildiriminiz Alındı',
+      `<p>Sayın ${uName || 'Bağışçımız'},</p><p><strong>${amt} TL</strong> tutarındaki "${target}" bağış bildiriminiz alınmıştır.</p><p>Ekibimiz dekontunuzu inceledikten sonra bağışınız onaylanacak ve size bilgi verilecektir.</p><p>Hayır Limanı Yardım Derneği</p>`);
+  }
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -292,6 +338,37 @@ app.post('/api/admin/users/:id/role', requireAdmin, (req, res) => {
 
 app.post('/api/admin/users/:id/tags', requireAdmin, (req, res) => {
   db.prepare('UPDATE users SET tags=? WHERE id=?').run(req.body.tags || '', req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  if (id === req.session.userId) return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });
+  db.prepare('DELETE FROM users WHERE id=?').run(id);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/users/:id/donations', requireAdmin, (req, res) => {
+  const rows = db.prepare(`
+    SELECT d.*, c.title AS category_title, cp.title AS campaign_title
+    FROM donations d
+    LEFT JOIN categories c ON c.id=d.category_id
+    LEFT JOIN campaigns cp ON cp.id=d.campaign_id
+    WHERE d.user_id=?
+    ORDER BY d.created_at DESC
+  `).all(req.params.id);
+  res.json(rows);
+});
+
+app.post('/api/admin/change-password', requireAdmin, (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Tüm alanlar zorunlu' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Yeni şifre en az 6 karakter olmalı' });
+  const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.session.userId);
+  if (!bcrypt.compareSync(currentPassword, u.password_hash)) return res.status(400).json({ error: 'Mevcut şifre hatalı' });
+  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(newPassword, 10), req.session.userId);
+  mailerSend(u.email, 'Şifreniz Değiştirildi',
+    `<p>Sayın ${u.name},</p><p>Yönetici hesabınızın şifresi başarıyla güncellendi.</p><p>Bu işlemi siz yapmadıysanız lütfen hemen sistemi kontrol edin.</p><p>Hayır Limanı Yardım Derneği</p>`);
   res.json({ ok: true });
 });
 
