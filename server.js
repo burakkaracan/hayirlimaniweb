@@ -36,6 +36,13 @@ app.use(session({
   cookie: { httpOnly: true, maxAge: 1000 * 60 * 60 * 24 * 7 }
 }));
 
+app.use((req, res, next) => {
+  if (req.hostname && req.hostname.startsWith('www.')) {
+    return res.redirect(301, `https://${req.hostname.slice(4)}${req.url}`);
+  }
+  next();
+});
+
 app.use('/uploads', express.static(uploadDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
