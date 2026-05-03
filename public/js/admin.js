@@ -737,6 +737,7 @@ const sections = {
 
 // ===== Dosya Yöneticisi =====
 let _allFiles = [];
+let _activeFilter = 'all';
 
 function fmFormatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
@@ -758,6 +759,7 @@ async function loadFiles() {
 }
 
 function filterFiles(type, el) {
+  _activeFilter = type;
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
   const rows = type === 'all' ? _allFiles : _allFiles.filter(f => f.type === type);
@@ -780,6 +782,7 @@ function filterFiles(type, el) {
       </div>
       <div class="fm-actions">
         <button class="btn btn-ghost btn-sm" title="URL Kopyala" onclick="fmCopyUrl('${f.url}',this)">Kopyala</button>
+        <button class="btn btn-ghost btn-sm" onclick="renameFile('${escapeHtml(f.name)}','${f.folder}')">Yeniden Adlandır</button>
         <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteFile('${escapeHtml(f.name)}','${f.folder}')">Sil</button>
       </div>
     </div>
@@ -793,6 +796,24 @@ async function deleteFile(name, folder) {
     _allFiles = _allFiles.filter(f => !(f.name === name && f.folder === folder));
     const el = document.getElementById('fm-' + CSS.escape(name + folder));
     if (el) el.remove();
+  }
+}
+
+async function renameFile(name, folder) {
+  const ext = name.includes('.') ? name.slice(name.lastIndexOf('.')) : '';
+  const baseName = name.replace(/^\d+-/, '').replace(ext, '');
+  const newBaseName = prompt('Yeni dosya adı:', baseName);
+  if (!newBaseName || !newBaseName.trim()) return;
+  const newName = newBaseName.trim() + ext;
+  const r = await api(`/api/admin/files/${encodeURIComponent(name)}?folder=${encodeURIComponent(folder)}`, {
+    method: 'PATCH', body: { newName }
+  });
+  if (r.ok) {
+    const file = _allFiles.find(f => f.name === name && f.folder === folder);
+    if (file) { file.name = r.name; file.url = r.url; }
+    filterFiles(_activeFilter || 'all');
+  } else {
+    alert(r.error || 'Yeniden adlandırma başarısız');
   }
 }
 

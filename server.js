@@ -559,6 +559,22 @@ app.get('/api/admin/files', requireAdmin, (_req, res) => {
   }
 });
 
+app.patch('/api/admin/files/:filename', requireAdmin, (req, res) => {
+  const oldName = path.basename(decodeURIComponent(req.params.filename));
+  const newName = path.basename(req.body?.newName || '');
+  if (!newName) return res.status(400).json({ error: 'Yeni isim boş olamaz' });
+  const folder = req.query.folder === '/images'
+    ? path.join(__dirname, 'public', 'images')
+    : uploadDir;
+  const oldPath = path.join(folder, oldName);
+  const newPath = path.join(folder, newName);
+  if (!fs.existsSync(oldPath)) return res.status(404).json({ error: 'Dosya bulunamadı' });
+  if (fs.existsSync(newPath)) return res.status(409).json({ error: 'Bu isimde dosya zaten var' });
+  fs.renameSync(oldPath, newPath);
+  const urlPrefix = req.query.folder === '/images' ? '/images' : '/uploads';
+  res.json({ ok: true, url: `${urlPrefix}/${newName}`, name: newName });
+});
+
 app.delete('/api/admin/files/:filename', requireAdmin, (req, res) => {
   const filename = path.basename(decodeURIComponent(req.params.filename));
   const folder = req.query.folder === '/images'
