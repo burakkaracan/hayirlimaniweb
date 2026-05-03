@@ -1302,6 +1302,64 @@ tbody tr:hover { background: #fafaf7; }
   .gp-card { width: 185px; min-height: 265px; }
 }
 
+/* ===== Dosya Yöneticisi ===== */
+.fm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.fm-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow .18s;
+}
+.fm-item:hover { box-shadow: var(--shadow); }
+.fm-thumb {
+  height: 140px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+.fm-thumb img, .fm-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.fm-play {
+  position: absolute;
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  pointer-events: none;
+}
+.fm-file-icon { font-size: 3rem; }
+.fm-info { padding: 8px 10px 4px; flex: 1; }
+.fm-name {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fm-meta { font-size: .73rem; color: var(--muted); margin-top: 2px; }
+.fm-actions {
+  padding: 8px 10px;
+  display: flex;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+}
+.fm-actions .btn { flex: 1; font-size: .78rem; padding: 5px 8px; }
+
 /* ===== Loading & Empty ===== */
 .loader { text-align: center; padding: 40px; color: var(--muted); }
 .empty { text-align: center; padding: 60px 20px; color: var(--muted); }

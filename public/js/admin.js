@@ -31,6 +31,7 @@ const NAV_ICONS = {
   categories: _si('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
   campaigns:  _si('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'),
   activities: _si('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
+  files:      _si('<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'),
   hero:       _si('<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>'),
   boards:     _si('<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>'),
   documents:  _si('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'),
@@ -56,6 +57,7 @@ function renderShell() {
           <a href="#categories" data-s="categories">${NAV_ICONS.categories} Bağış Kategorileri</a>
           <a href="#campaigns" data-s="campaigns">${NAV_ICONS.campaigns} Kampanyalar</a>
           <a href="#activities" data-s="activities">${NAV_ICONS.activities} Faaliyetler</a>
+          <a href="#files" data-s="files">${NAV_ICONS.files} Dosya Yöneticisi</a>
           <a href="#hero" data-s="hero">${NAV_ICONS.hero} Hero Slider</a>
           <a href="#boards" data-s="boards">${NAV_ICONS.boards} Yetkili Kurullar</a>
           <a href="#documents" data-s="documents">${NAV_ICONS.documents} Belgeler</a>
@@ -661,6 +663,24 @@ const sections = {
     `;
   },
 
+  async files() {
+    document.getElementById('admin-main').innerHTML = `
+      <div class="admin-head"><h2>Dosya Yöneticisi</h2>
+        <label class="btn btn-primary" style="cursor:pointer">
+          + Dosya Yükle <input type="file" id="file-upload-input" multiple accept="image/*,video/*" style="display:none" onchange="uploadFiles(this)">
+        </label>
+      </div>
+      <div class="tab-bar" style="margin-bottom:16px">
+        <button class="active" onclick="filterFiles('all',this)">Tümü</button>
+        <button onclick="filterFiles('image',this)">Görseller</button>
+        <button onclick="filterFiles('video',this)">Videolar</button>
+        <button onclick="filterFiles('other',this)">Diğer</button>
+      </div>
+      <div id="files-grid" class="fm-grid">Yükleniyor…</div>
+    `;
+    await loadFiles();
+  },
+
   async bulk() {
     document.getElementById('admin-main').innerHTML = `
       <div class="admin-head"><h2>Toplu Mail</h2></div>
@@ -714,6 +734,82 @@ const sections = {
     `;
   },
 };
+
+// ===== Dosya Yöneticisi =====
+let _allFiles = [];
+
+function fmFormatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+async function loadFiles() {
+  const grid = document.getElementById('files-grid');
+  if (!grid) return;
+  try {
+    const result = await api('/api/admin/files');
+    if (!Array.isArray(result)) throw new Error(result?.error || 'API hatası');
+    _allFiles = result;
+    filterFiles('all');
+  } catch (e) {
+    grid.innerHTML = `<div class="empty" style="color:var(--danger)">Dosyalar yüklenemedi: ${e.message}</div>`;
+  }
+}
+
+function filterFiles(type, el) {
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const rows = type === 'all' ? _allFiles : _allFiles.filter(f => f.type === type);
+  const grid = document.getElementById('files-grid');
+  if (!grid) return;
+  if (rows.length === 0) { grid.innerHTML = '<div class="empty">Dosya yok</div>'; return; }
+  grid.innerHTML = rows.map(f => `
+    <div class="fm-item" id="fm-${CSS.escape(f.name)}">
+      <div class="fm-thumb" onclick="window.open('${f.url}','_blank')">
+        ${f.type === 'image'
+          ? `<img src="${f.url}" alt="" loading="lazy" />`
+          : f.type === 'video'
+          ? `<video src="${f.url}" muted preload="metadata"></video><div class="fm-play">▶</div>`
+          : `<div class="fm-file-icon">📄</div>`}
+      </div>
+      <div class="fm-info">
+        <div class="fm-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.replace(/^\d+-/, ''))}</div>
+        <div class="fm-meta">${fmFormatSize(f.size)} · ${new Date(f.mtime).toLocaleDateString('tr-TR')}</div>
+      </div>
+      <div class="fm-actions">
+        <button class="btn btn-ghost btn-sm" title="URL Kopyala" onclick="fmCopyUrl('${f.url}',this)">Kopyala</button>
+        <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteFile('${escapeHtml(f.name)}')">Sil</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteFile(name) {
+  if (!confirm(`"${name.replace(/^\d+-/, '')}" silinecek. Emin misiniz?`)) return;
+  const r = await api(`/api/admin/files/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  if (r.ok) {
+    _allFiles = _allFiles.filter(f => f.name !== name);
+    const el = document.getElementById('fm-' + CSS.escape(name));
+    if (el) el.remove();
+  }
+}
+
+async function fmCopyUrl(url, btn) {
+  await navigator.clipboard.writeText(window.location.origin + url);
+  const orig = btn.textContent;
+  btn.textContent = 'Kopyalandı!';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+async function uploadFiles(input) {
+  const formData = new FormData();
+  for (const file of input.files) formData.append('files', file);
+  const res = await fetch('/api/admin/files/upload', { method: 'POST', body: formData });
+  const r = await res.json();
+  if (r.ok) await loadFiles();
+  input.value = '';
+}
 
 async function adminChangePassword() {
   const current = document.getElementById('admin-pw-current').value;

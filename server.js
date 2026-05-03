@@ -522,6 +522,54 @@ app.delete('/api/admin/donations/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- File Manager ----------
+const IMAGE_EXT = new Set(['.jpg','.jpeg','.png','.gif','.webp','.svg','.avif']);
+const VIDEO_EXT = new Set(['.mp4','.webm','.mov','.avi','.mkv']);
+
+app.get('/api/admin/files', requireAdmin, (_req, res) => {
+  try {
+    const names = fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : [];
+    const files = names.map(name => {
+      try {
+        const stat = fs.statSync(path.join(uploadDir, name));
+        const ext = path.extname(name).toLowerCase();
+        return {
+          name,
+          url: `/uploads/${name}`,
+          size: stat.size,
+          mtime: stat.mtime,
+          type: IMAGE_EXT.has(ext) ? 'image' : VIDEO_EXT.has(ext) ? 'video' : 'other'
+        };
+      } catch { return null; }
+    }).filter(Boolean).sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
+    res.json(files);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/files/:filename', requireAdmin, (req, res) => {
+  const filename = path.basename(decodeURIComponent(req.params.filename));
+  const filePath = path.join(uploadDir, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Dosya bulunamadı' });
+  fs.unlinkSync(filePath);
+  res.json({ ok: true });
+});
+
+const uploadMulti = multer({
+  storage: multer.diskStorage({
+    destination: uploadDir,
+    filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`)
+  })
+}).array('files', 20);
+
+app.post('/api/admin/files/upload', requireAdmin, (req, res) => {
+  uploadMulti(req, res, err => {
+    if (err) return res.status(400).json({ error: err.message });
+    res.json({ ok: true, count: req.files.length });
+  });
+});
+
 // categories CRUD
 app.get('/api/admin/categories', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT * FROM categories ORDER BY COALESCE(parent_id,id), sort_order, id').all());
