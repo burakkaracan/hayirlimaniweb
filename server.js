@@ -69,14 +69,25 @@ function getNextReceiptNumber() {
   return n;
 }
 
+const MAIL_SIGNATURE = `
+<div style="margin-top:32px;padding-top:20px;border-top:1px solid #e2e8f0;">
+  <a href="https://hayirlimani.com" target="_blank" style="display:inline-block;line-height:0;">
+    <img src="https://hayirlimani.com/images/mail-imza.png"
+         alt="Hayır Limanı Yardım Derneği"
+         width="560"
+         style="display:block;border:0;max-width:100%;" />
+  </a>
+</div>`;
+
 function mailerSend(to, subject, html) {
+  const fullHtml = html + MAIL_SIGNATURE;
   const apiKey = process.env.SMTP_PASS;
   if (apiKey && apiKey.startsWith('re_')) {
     const body = JSON.stringify({
       from: process.env.SMTP_FROM || 'noreply@hayirlimani.com',
       to: Array.isArray(to) ? to : [to],
       subject,
-      html
+      html: fullHtml
     });
     const req = https.request({
       hostname: 'api.resend.com',
@@ -106,11 +117,11 @@ function mailerSend(to, subject, html) {
     });
     transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to, subject, html
+      to, subject, html: fullHtml
     }).catch(err => console.error('Mail gönderilemedi:', err.message));
   } else {
     const line = `[MAIL] to=${to} subject="${subject}" at=${new Date().toISOString()}\n`;
-    fs.appendFile(path.join(__dirname, 'mail.log'), line + html + '\n---\n', () => {});
+    fs.appendFile(path.join(__dirname, 'mail.log'), line + fullHtml + '\n---\n', () => {});
     console.log(line);
   }
 }
