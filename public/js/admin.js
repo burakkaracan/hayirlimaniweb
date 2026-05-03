@@ -768,6 +768,14 @@ function filterFiles(type, el) {
   if (rows.length === 0) { grid.innerHTML = '<div class="empty">Dosya yok</div>'; return; }
   grid.innerHTML = rows.map(f => `
     <div class="fm-item" id="fm-${CSS.escape(f.name + f.folder)}">
+      <div class="fm-menu">
+        <button class="fm-menu-btn" onclick="fmMenuToggle(this)" title="İşlemler">⋯</button>
+        <div class="fm-menu-dropdown">
+          <button onclick="fmCopyUrl('${f.url}',this)">URL Kopyala</button>
+          <button onclick="renameFile('${escapeHtml(f.name)}','${f.folder}')">Yeniden Adlandır</button>
+          <button class="fm-danger" onclick="deleteFile('${escapeHtml(f.name)}','${f.folder}')">Sil</button>
+        </div>
+      </div>
       <div class="fm-thumb" onclick="window.open('${f.url}','_blank')">
         ${f.type === 'image'
           ? `<img src="${f.url}" alt="" loading="lazy" />`
@@ -779,11 +787,6 @@ function filterFiles(type, el) {
         <div class="fm-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.replace(/^\d+-/, ''))}</div>
         <div class="fm-meta">${fmFormatSize(f.size)} · ${new Date(f.mtime).toLocaleDateString('tr-TR')}</div>
         <div class="fm-meta" style="color:var(--brand);opacity:.7">${f.folder}</div>
-      </div>
-      <div class="fm-actions">
-        <button class="btn btn-ghost btn-sm" title="URL Kopyala" onclick="fmCopyUrl('${f.url}',this)">Kopyala</button>
-        <button class="btn btn-ghost btn-sm" onclick="renameFile('${escapeHtml(f.name)}','${f.folder}')">Yeniden Adlandır</button>
-        <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteFile('${escapeHtml(f.name)}','${f.folder}')">Sil</button>
       </div>
     </div>
   `).join('');
@@ -817,7 +820,20 @@ async function renameFile(name, folder) {
   }
 }
 
+function fmMenuToggle(btn) {
+  const dropdown = btn.nextElementSibling;
+  const isOpen = dropdown.classList.contains('open');
+  document.querySelectorAll('.fm-menu-dropdown.open').forEach(d => d.classList.remove('open'));
+  if (!isOpen) dropdown.classList.add('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.fm-menu-btn')) {
+    document.querySelectorAll('.fm-menu-dropdown.open').forEach(d => d.classList.remove('open'));
+  }
+});
+
 async function fmCopyUrl(url, btn) {
+  document.querySelectorAll('.fm-menu-dropdown.open').forEach(d => d.classList.remove('open'));
   await navigator.clipboard.writeText(window.location.origin + url);
   const orig = btn.textContent;
   btn.textContent = 'Kopyalandı!';
