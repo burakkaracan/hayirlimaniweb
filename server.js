@@ -453,6 +453,7 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
     ? db.prepare('SELECT title FROM campaigns WHERE id=?').get(d.campaign_id) : null;
 
   const receiptNumber = getNextReceiptNumber();
+  const adminUser = db.prepare('SELECT name FROM users WHERE id=?').get(req.session.userId);
 
   const donationWithTitles = {
     ...d,
@@ -461,6 +462,7 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
     approved_at: new Date().toISOString(),
     category_title: catRow?.title || null,
     campaign_title: campRow?.title || null,
+    approved_by: adminUser?.name || '',
   };
 
   // Site ayarlarını al
