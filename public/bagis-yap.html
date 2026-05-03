@@ -23,6 +23,11 @@
       <h1>🌿 Havale / EFT ile <span class="heading-accent">Bağış</span></h1>
       <p class="intro">Sanal pos sistemimiz yakında hizmetinize girecektir. Bu süreçte bağışlarınızı aşağıdaki IBAN numarasına yapabilirsiniz.</p>
 
+      <div class="iban-cur-tabs">
+        <button class="iban-cur-btn active" onclick="switchIban('tl',this)">₺ TL</button>
+        <button class="iban-cur-btn" onclick="switchIban('eur',this)">€ EUR</button>
+        <button class="iban-cur-btn" onclick="switchIban('usd',this)">$ USD</button>
+      </div>
       <div class="iban-display">
         <div class="label">Bağış IBAN</div>
         <div class="value" id="iban-val">—</div>
@@ -42,12 +47,12 @@
             <input type="number" id="amount" min="1" placeholder="Tutar (₺)" />
           </div>
         </div>
-        <div class=”form-group”>
+        <div class="form-group">
           <label>Açıklama (opsiyonel)</label>
-          <input type=”text” id=”note” placeholder=”Açıklama kısmına Bağış yazabilirsiniz” />
+          <input type="text" id="note" placeholder="Açıklama yazabilirsiniz" />
         </div>
 
-        <div id=”guest-fields” class=”hidden”>
+        <div id="guest-fields" class="hidden">
           <div class="grid-2">
             <div class="form-group"><label>Ad Soyad *</label><input type="text" id="gname" /></div>
             <div class="form-group"><label>E-posta *</label><input type="email" id="gemail" /></div>
@@ -71,7 +76,7 @@
         <div class="vekalet-box">
           <label class="vekalet-label">
             <input type="checkbox" id="vekalet-check" />
-            <span>Kurban ibadetimi ifa etmek üzere <strong>Hayır Limanı Yardım Derneği</strong>'ne vekâlet veriyorum; kurbanın satın alınması, kesimleri ve dağıtımıyla ilgili tüm işlemlerin dernek adına gerçekleştirilmesini onaylıyorum.</span>
+            <span>Kurban ibadetimi ifa etmek üzere <strong>Hayır Limanı Derneği</strong>'ne vekâlet veriyorum; kurbanın satın alınması, kesimleri ve dağıtımıyla ilgili tüm işlemlerin dernek adına gerçekleştirilmesini onaylıyorum.</span>
           </label>
         </div>
       </div>
@@ -91,8 +96,18 @@
   <footer id="site-footer" class="footer"></footer>
   <script src="/js/main.js"></script>
   <script>
+    const _ibans = {};
+    function switchIban(cur, btn) {
+      btn.parentElement.querySelectorAll('.iban-cur-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('iban-val').textContent = _ibans[cur] || '—';
+    }
+
     window.addEventListener('app-ready', async () => {
-      document.getElementById('iban-val').textContent = appSettings.iban || '';
+      _ibans.tl  = appSettings.iban     || '';
+      _ibans.eur = appSettings.iban_eur || '';
+      _ibans.usd = appSettings.iban_usd || '';
+      document.getElementById('iban-val').textContent = _ibans.tl;
       document.getElementById('iban-holder').textContent = appSettings.iban_holder || '';
 
       const cats = await api('/api/categories');
@@ -159,7 +174,8 @@
     });
 
     function copyIban() {
-      navigator.clipboard.writeText(appSettings.iban || '').then(() => alert('IBAN kopyalandı'));
+      const val = document.getElementById('iban-val').textContent;
+      navigator.clipboard.writeText(val || '').then(() => alert('IBAN kopyalandı'));
     }
 
     async function submitDonation() {

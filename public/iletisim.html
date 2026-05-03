@@ -48,6 +48,11 @@
           </div>
           <div>
             <h4>Bağış IBAN</h4>
+            <div class="iban-cur-tabs" style="justify-content:flex-start; margin:8px 0;">
+              <button class="iban-cur-btn active" onclick="switchContactIban('tl',this)">₺ TL</button>
+              <button class="iban-cur-btn" onclick="switchContactIban('eur',this)">€ EUR</button>
+              <button class="iban-cur-btn" onclick="switchContactIban('usd',this)">$ USD</button>
+            </div>
             <div id="info-iban" style="font-weight:600;"></div>
             <div class="muted" id="info-iban-holder" style="font-size:.85rem;"></div>
           </div>
@@ -99,8 +104,18 @@
   <footer id="site-footer" class="footer"></footer>
   <script src="/js/main.js"></script>
   <script>
+    const _contactIbans = {};
+    function switchContactIban(cur, btn) {
+      btn.parentElement.querySelectorAll('.iban-cur-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('info-iban').textContent = _contactIbans[cur] || '';
+    }
+
     window.addEventListener('app-ready', () => {
       const s = appSettings;
+      _contactIbans.tl  = s.iban     || '';
+      _contactIbans.eur = s.iban_eur || '';
+      _contactIbans.usd = s.iban_usd || '';
       document.getElementById('info-address').textContent = s.address || '';
       const phone = s.phone || '';
       const phoneLink = document.getElementById('info-phone');

@@ -52,7 +52,8 @@
       "Bash(cat)",
       "Read(//tmp/**)",
       "Bash(git commit *)",
-      "Bash(Copy-Item *)"
+      "Bash(Copy-Item *)",
+      "Bash(python3 -c \"import sys; data=sys.stdin.buffer.read\\(\\); lines=data.split\\(b'\\\\n'\\); [print\\(i+1, repr\\(lines[i].decode\\('utf-8','replace'\\)\\)\\) for i in range\\(44,50\\)]\")"
     ]
   }
 }

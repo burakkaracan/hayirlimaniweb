@@ -411,6 +411,8 @@ function seed() {
     email: 'info@hayirlimani.com',
     address: 'Battalgazi Mahallesi, 1017 Caddesi, 27-A, Altındağ/Ankara',
     iban: 'TR11 0021 0000 0014 7550 3000 01',
+    iban_eur: 'TR97 0021 0000 0014 7550 3001 02',
+    iban_usd: 'TR27 0021 0000 0014 7550 3001 01',
     iban_holder: 'Hayır Limanı Derneği',
     about_body: 'Hayır Limanı Derneği, 2015 yılından bu yana Türkiye ve dünyanın dört bir yanında ihtiyaç sahiplerine ulaşan bir yardım kuruluşudur. Afet bölgelerinden yetim çocuklara, su kuyularından eğitim burslarına kadar geniş bir yelpazede çalışmalarımızı sürdürüyoruz.',
     mission: 'Yardımı ihtiyaç sahibine en hızlı, en şeffaf ve en güvenilir şekilde ulaştırmak; insan onurunu koruyan, kalıcı çözümler üreten projeler yürütmek.',

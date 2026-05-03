@@ -235,7 +235,15 @@ function renderPreFooterCTA() {
   `;
 }
 
-function copyIban() {
+function switchFooterIban(cur, btn) {
+  btn.parentElement.querySelectorAll('.footer-iban-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ibans = { tl: appSettings.iban, eur: appSettings.iban_eur, usd: appSettings.iban_usd };
+  const el = document.getElementById('footer-iban-text');
+  if (el) el.textContent = ibans[cur] || '';
+}
+
+function copyFooterIban() {
   const txt = document.getElementById('footer-iban-text')?.textContent?.trim();
   if (!txt) return;
   navigator.clipboard.writeText(txt).then(() => {
@@ -302,9 +310,14 @@ function renderFooter() {
           </form>
           <div class="iban-box">
             <small>Bağış IBAN</small>
+            <div class="footer-iban-tabs">
+              <button class="footer-iban-btn active" onclick="switchFooterIban('tl',this)">₺ TL</button>
+              <button class="footer-iban-btn" onclick="switchFooterIban('eur',this)">€ EUR</button>
+              <button class="footer-iban-btn" onclick="switchFooterIban('usd',this)">$ USD</button>
+            </div>
             <div class="iban-row">
               <strong id="footer-iban-text">${s.iban || ''}</strong>
-              <button id="iban-copy-btn" class="iban-copy-btn" onclick="copyIban()" title="IBAN'ı Kopyala">${svgIcon('iban')}</button>
+              <button id="iban-copy-btn" class="iban-copy-btn" onclick="copyFooterIban()" title="IBAN'ı Kopyala">${svgIcon('iban')}</button>
             </div>
             <div class="iban-holder">${s.iban_holder || ''}</div>
           </div>

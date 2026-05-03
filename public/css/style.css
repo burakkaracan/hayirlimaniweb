@@ -728,10 +728,10 @@ h3 { font-size: 1.25rem; }
 /* ===== Forms ===== */
 .form-card { max-width: 460px; margin: 60px auto; background: #fff; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow); }
 .form-card h1 { text-align: center; margin-bottom: 28px; }
-.form-group { margin-bottom: 16px; }
+.form-group { margin-bottom: 16px; display: block; }
 .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: .9rem; }
 .form-group input, .form-group textarea, .form-group select {
-  width: 100%; padding: 12px 14px; border: 1px solid var(--border);
+  display: block; width: 100%; padding: 12px 14px; border: 1px solid var(--border);
   border-radius: var(--radius); background: var(--bg);
 }
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
@@ -888,6 +888,24 @@ h3 { font-size: 1.25rem; }
 .iban-display .value { font-size: 1.35rem; font-weight: 700; color: var(--brand-dark); margin: 8px 0; letter-spacing: 1px; word-spacing: 4px; font-family: var(--font-price); }
 .iban-display .holder { font-weight: 600; color: var(--text); }
 .iban-display button { margin-top: 10px; }
+
+.iban-cur-tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; }
+.iban-cur-btn {
+  padding: 5px 18px; border-radius: 999px; border: 1.5px solid var(--border);
+  font-weight: 600; font-size: .82rem; cursor: pointer;
+  background: none; color: var(--muted); transition: all .15s;
+}
+.iban-cur-btn:hover { border-color: var(--brand); color: var(--brand); }
+.iban-cur-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.footer-iban-tabs { display: flex; gap: 4px; margin-bottom: 6px; }
+.footer-iban-btn {
+  padding: 2px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3);
+  font-size: .72rem; font-weight: 600; cursor: pointer;
+  background: none; color: rgba(255,255,255,.6); transition: all .15s;
+}
+.footer-iban-btn:hover { border-color: rgba(255,255,255,.7); color: #fff; }
+.footer-iban-btn.active { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.6); color: #fff; }
 
 .vekalet-box {
   background: #fff8e6;
