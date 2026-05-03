@@ -418,8 +418,9 @@ h3 { font-size: 1.25rem; }
 .cat-subcat-sel:focus { border-color: var(--brand); }
 .cat-panel-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .cat-panel-img {
-  width: 100%; height: 280px;
-  object-fit: cover;
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
   border-radius: var(--radius-lg);
   display: block;
 }
@@ -433,7 +434,8 @@ h3 { font-size: 1.25rem; }
 .cat-panel-placeholder svg { width: 80px; height: 80px; color: var(--brand); }
 @media (max-width: 860px) {
   .cat-panel { grid-template-columns: 1fr; padding: 32px 0 16px; gap: 24px; }
-  .cat-panel-img, .cat-panel-placeholder { height: 220px; }
+  .cat-panel-img { max-height: 260px; }
+  .cat-panel-placeholder { height: 220px; }
 }
 
 /* ===== Amount Picker ===== */

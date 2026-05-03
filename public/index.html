@@ -364,7 +364,7 @@
       const subcatHtml = subs.length ? `
         <div class="cat-subcat-wrap">
           <select id="cat-subcat-sel" class="cat-subcat-sel" onchange="updateCatDonateBtn('${c.slug}')">
-            <option value="">— Alt tür seçin —</option>
+            <option value="">— Bağış Seçin —</option>
             ${subs.map(s => `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">${s.title}${s.price ? ' — ' + formatTL(s.price) : ''}</option>`).join('')}
           </select>
         </div>` : '';
