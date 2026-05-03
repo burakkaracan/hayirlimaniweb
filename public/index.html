@@ -335,13 +335,13 @@
       qdParents.forEach(p => {
         const subs = qdChildrenOf(p.id);
         if (subs.length) {
-          qdOpts += `<optgroup label="${p.icon ? p.icon + ' ' : ''}${p.title}">`;
+          qdOpts += `<optgroup label="${p.title}">`;
           subs.forEach(s => {
             qdOpts += `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">${s.title}</option>`;
           });
           qdOpts += '</optgroup>';
         } else {
-          qdOpts += `<option value="${p.slug}" data-price="${p.price||0}" data-fixed="${p.fixed_price||0}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
+          qdOpts += `<option value="${p.slug}" data-price="${p.price||0}" data-fixed="${p.fixed_price||0}">${p.title}</option>`;
         }
       });
       qd.innerHTML = qdOpts;
