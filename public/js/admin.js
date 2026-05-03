@@ -1051,12 +1051,13 @@ function renderDonationList(filter) {
             <td><strong>${formatTL(d.amount)}</strong></td>
             <td>${d.category_title || d.campaign_title || 'Genel'}</td>
             <td><span class="badge ${d.status}">${{ pending: 'Bekliyor', approved: 'Onaylı', rejected: 'Red' }[d.status]}</span></td>
-            <td>
+            <td style="white-space:nowrap">
               ${d.status === 'pending' ? `
                 <button class="btn btn-primary btn-sm" onclick="approveDonation(${d.id})">Onayla</button>
                 <button class="btn btn-outline btn-sm" onclick="rejectDonation(${d.id})">Reddet</button>
               ` : ''}
               ${d.receipt_file ? `<a href="${d.receipt_file}" target="_blank" class="btn btn-ghost btn-sm">Makbuz</a>` : ''}
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteDonation(${d.id}, '${escapeHtml(d.user_name).replace(/'/g,"\\'")}')">Sil</button>
             </td>
           </tr>`).join('')}
       </tbody>
@@ -1075,6 +1076,12 @@ async function approveDonation(id) {
 async function rejectDonation(id) {
   const comment = prompt('Red sebebi:') || '';
   await api(`/api/admin/donations/${id}/reject`, { method: 'POST', body: { adminComment: comment } });
+  switchSection(adminState.section);
+}
+async function deleteDonation(id, name) {
+  if (!confirm(`"${name}" adlı kişinin bağışı kalıcı olarak silinecek. Emin misiniz?`)) return;
+  if (!confirm('Bu işlem geri alınamaz. Onaylıyor musunuz?')) return;
+  await api(`/api/admin/donations/${id}`, { method: 'DELETE' });
   switchSection(adminState.section);
 }
 

@@ -59,6 +59,16 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+function getNextReceiptNumber() {
+  const used = db.prepare('SELECT receipt_number FROM donations WHERE receipt_number IS NOT NULL ORDER BY receipt_number').all().map(r => r.receipt_number);
+  let n = 1;
+  for (const num of used) {
+    if (num > n) break;
+    n = num + 1;
+  }
+  return n;
+}
+
 function mailerSend(to, subject, html) {
   const apiKey = process.env.SMTP_PASS;
   if (apiKey && apiKey.startsWith('re_')) {
@@ -431,8 +441,11 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
   const campRow = d.campaign_id
     ? db.prepare('SELECT title FROM campaigns WHERE id=?').get(d.campaign_id) : null;
 
+  const receiptNumber = getNextReceiptNumber();
+
   const donationWithTitles = {
     ...d,
+    receipt_number: receiptNumber,
     admin_comment: adminComment,
     approved_at: new Date().toISOString(),
     category_title: catRow?.title || null,
@@ -446,11 +459,11 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
 
   try {
     const pdfBuffer = await generateReceiptPDF(donationWithTitles, settings);
-    const receiptName = `makbuz-${id}-${Date.now()}.pdf`;
+    const receiptName = `makbuz-${String(receiptNumber).padStart(6, '0')}-${Date.now()}.pdf`;
     fs.writeFileSync(path.join(uploadDir, receiptName), pdfBuffer);
 
-    db.prepare('UPDATE donations SET status=?, approved_at=CURRENT_TIMESTAMP, receipt_file=?, admin_comment=? WHERE id=?')
-      .run('approved', `/uploads/${receiptName}`, adminComment, id);
+    db.prepare('UPDATE donations SET status=?, approved_at=CURRENT_TIMESTAMP, receipt_file=?, admin_comment=?, receipt_number=? WHERE id=?')
+      .run('approved', `/uploads/${receiptName}`, adminComment, receiptNumber, id);
 
     if (d.user_email) {
       mailerSend(d.user_email, 'Bağışınız Onaylandı',
@@ -480,6 +493,21 @@ app.post('/api/admin/donations/:id/reject', requireAdmin, (req, res) => {
     mailerSend(d.user_email, 'Bağış Bildiriminiz Hakkında',
       `<p>Sayın ${d.user_name},</p><p>${d.amount} TL tutarındaki bağış bildiriminiz tarafımızca doğrulanamamıştır. Detaylı bilgi için lütfen bizimle iletişime geçin.</p><p>Neden: ${req.body?.adminComment || 'Belirtilmedi'}</p>`);
   }
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/donations/:id', requireAdmin, (req, res) => {
+  const id = req.params.id;
+  const d = db.prepare('SELECT * FROM donations WHERE id=?').get(id);
+  if (!d) return res.status(404).json({ error: 'Bulunamadı' });
+  if (d.receipt_file) {
+    const filePath = path.join(uploadDir, path.basename(d.receipt_file));
+    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
+  }
+  if (d.status === 'approved' && d.campaign_id) {
+    db.prepare('UPDATE campaigns SET raised=MAX(0,raised-?), donor_count=MAX(0,donor_count-1) WHERE id=?').run(d.amount, d.campaign_id);
+  }
+  db.prepare('DELETE FROM donations WHERE id=?').run(id);
   res.json({ ok: true });
 });
 

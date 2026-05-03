@@ -141,6 +141,7 @@ try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_text TEXT'); } catch {
 try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_link TEXT'); } catch {}
 try { db.exec('ALTER TABLE activities ADD COLUMN regions TEXT DEFAULT ""'); } catch {}
 try { db.exec('ALTER TABLE campaigns ADD COLUMN completed INTEGER DEFAULT 0'); } catch {}
+try { db.exec('ALTER TABLE donations ADD COLUMN receipt_number INTEGER'); } catch {}
 
 // Mevcut aktivitelere bölge ata (sadece bir kez çalışır)
 try {

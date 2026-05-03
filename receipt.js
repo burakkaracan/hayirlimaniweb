@@ -22,7 +22,7 @@ function generateReceiptPDF(donation, settings = {}) {
       size: 'A4',
       margin: 0,
       info: {
-        Title:   `Bağış Makbuzu #${String(donation.id).padStart(6, '0')}`,
+        Title:   `Bağış Makbuzu #${String(donation.receipt_number || donation.id).padStart(6, '0')}`,
         Author:  'Hayır Limanı Yardım Derneği',
         Subject: 'Resmi Bağış Makbuzu',
         Keywords: 'bağış, makbuz, hayır limanı'
@@ -81,7 +81,7 @@ function generateReceiptPDF(donation, settings = {}) {
        .text('BAĞIŞ MAKBUZU', 0, 147, { align: 'center', width: W });
     doc.font('R').fontSize(9).fillColor(C_MUTED)
        .text(
-         `Makbuz No: ${String(donation.id).padStart(6, '0')}    ` +
+         `Makbuz No: ${String(donation.receipt_number || donation.id).padStart(6, '0')}    ` +
          `Düzenleme Tarihi: ${new Date().toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' })}`,
          0, 172, { align: 'center', width: W }
        );
