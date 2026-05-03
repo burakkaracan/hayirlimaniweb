@@ -94,6 +94,7 @@ function renderHeader() {
           </div>
           <a href="/faaliyetler.html">Faaliyetler</a>
           <a href="/iletisim.html">İletişim</a>
+          <a href="/bagis-yap.html" class="btn btn-accent nav-donate-mobile">${svgIcon('heart')} Bağış Yap</a>
         </nav>
         <div class="header-actions">
           <a href="/bagis-yap.html" class="btn btn-accent">${svgIcon('heart')} Bağış Yap</a>

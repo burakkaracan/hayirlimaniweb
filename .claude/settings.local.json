@@ -50,7 +50,9 @@
       "WebFetch(domain:www.fonttrio.xyz)",
       "WebFetch(domain:github.com)",
       "Bash(cat)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(git commit *)",
+      "Bash(Copy-Item *)"
     ]
   }
 }
