@@ -397,6 +397,19 @@ app.post('/api/admin/users/:id/tags', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+app.patch('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, email, phone, password } = req.body;
+  if (!name?.trim() || !email?.trim()) return res.status(400).json({ error: 'Ad Soyad ve e-posta zorunludur' });
+  const conflict = db.prepare('SELECT id FROM users WHERE email=? AND id!=?').get(email.trim(), id);
+  if (conflict) return res.status(400).json({ error: 'Bu e-posta adresi başka bir hesapta kullanılıyor' });
+  db.prepare('UPDATE users SET name=?, email=?, phone=? WHERE id=?').run(name.trim(), email.trim(), phone?.trim() || null, id);
+  if (password && password.length >= 6) {
+    db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(password, 10), id);
+  }
+  res.json({ ok: true });
+});
+
 app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
   const id = parseInt(req.params.id);
   if (id === req.session.userId) return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });

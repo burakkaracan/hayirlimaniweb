@@ -8,6 +8,7 @@ let _currentThread = null;
 let _msgFilter = { label: null, archived: 0 };
 let _msgLabels = [];
 let _msgThreads = [];
+let _usersMap = {};
 
 window.addEventListener('app-ready', async () => {
   if (!currentUser) { location.href = '/giris.html'; return; }
@@ -427,6 +428,8 @@ const sections = {
 
   async users() {
     const users = await api('/api/admin/users');
+    _usersMap = {};
+    users.forEach(u => { _usersMap[u.id] = u; });
     document.getElementById('admin-main').innerHTML = `
       <div class="admin-head"><h2>Bağışçılar / Kullanıcılar</h2></div>
       <div class="admin-section">
@@ -436,9 +439,9 @@ const sections = {
             ${users.map(u => `
               <tr id="user-row-${u.id}">
                 <td>${u.id}</td>
-                <td>${escapeHtml(u.name)}</td>
-                <td>${escapeHtml(u.email)}</td>
-                <td>${escapeHtml(u.phone || '-')}</td>
+                <td id="user-name-${u.id}">${escapeHtml(u.name)}</td>
+                <td id="user-email-${u.id}">${escapeHtml(u.email)}</td>
+                <td id="user-phone-${u.id}">${escapeHtml(u.phone || '-')}</td>
                 <td>
                   <select onchange="updateRole(${u.id}, this.value)">
                     <option ${u.role === 'donor' ? 'selected' : ''} value="donor">Bağışçı</option>
@@ -449,6 +452,7 @@ const sections = {
                 <td><input type="text" value="${u.tags || ''}" onblur="updateTags(${u.id}, this.value)" placeholder="vip,aylik" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;" /></td>
                 <td>${new Date(u.created_at).toLocaleDateString('tr-TR')}</td>
                 <td style="white-space:nowrap;display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-ghost btn-sm" onclick="editUser(${u.id})">Düzenle</button>
                   <button class="btn btn-ghost btn-sm" onclick="toggleUserDonations(${u.id})">Bağışlar</button>
                   <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteUser(${u.id}, '${escapeHtml(u.name).replace(/'/g,'\\&#39;')}')">Sil</button>
                 </td>
@@ -1219,6 +1223,48 @@ async function deleteDonation(id, name) {
   if (!confirm('Bu işlem geri alınamaz. Onaylıyor musunuz?')) return;
   await api(`/api/admin/donations/${id}`, { method: 'DELETE' });
   switchSection(adminState.section);
+}
+
+function editUser(id) {
+  const u = _usersMap[id];
+  if (!u) return;
+  document.getElementById('modal-body').innerHTML = `
+    <h3>Kullanıcı Düzenle</h3>
+    <div class="data-form">
+      <div><label>Ad Soyad</label><input id="eu-name" type="text" value="${escapeHtml(u.name)}" /></div>
+      <div><label>E-posta</label><input id="eu-email" type="email" value="${escapeHtml(u.email)}" /></div>
+      <div><label>Telefon</label><input id="eu-phone" type="tel" value="${escapeHtml(u.phone || '')}" placeholder="05XX XXX XX XX" /></div>
+      <div><label>Yeni Şifre <span class="muted" style="font-weight:400;font-size:.82rem">(boş bırakılırsa değişmez)</span></label><input id="eu-pw" type="password" placeholder="En az 6 karakter" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="saveUserEdit(${id})">Kaydet</button>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+async function saveUserEdit(id) {
+  const name  = document.getElementById('eu-name').value.trim();
+  const email = document.getElementById('eu-email').value.trim();
+  const phone = document.getElementById('eu-phone').value.trim();
+  const pw    = document.getElementById('eu-pw').value;
+  if (!name || !email) return alert('Ad Soyad ve e-posta zorunludur.');
+  const body = { name, email, phone };
+  if (pw) body.password = pw;
+  const r = await api(`/api/admin/users/${id}`, { method: 'PATCH', body });
+  if (r.ok) {
+    closeModal();
+    _usersMap[id] = { ..._usersMap[id], name, email, phone };
+    const n = document.getElementById(`user-name-${id}`);
+    const e = document.getElementById(`user-email-${id}`);
+    const p = document.getElementById(`user-phone-${id}`);
+    if (n) n.textContent = name;
+    if (e) e.textContent = email;
+    if (p) p.textContent = phone || '-';
+  } else {
+    alert(r.error || 'Güncelleme başarısız.');
+  }
 }
 
 async function updateRole(id, role) {
