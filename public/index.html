@@ -335,9 +335,9 @@
       qdParents.forEach(p => {
         const subs = qdChildrenOf(p.id);
         if (subs.length) {
-          qdOpts += `<option value="" disabled>▾ ${p.title}</option>`;
+          qdOpts += `<option value="${p.slug}" data-price="${p.price||0}" data-fixed="${p.fixed_price||0}">${p.title}</option>`;
           subs.forEach(s => {
-            qdOpts += `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">  ${s.title}</option>`;
+            qdOpts += `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">    ${s.title}</option>`;
           });
         } else {
           qdOpts += `<option value="${p.slug}" data-price="${p.price||0}" data-fixed="${p.fixed_price||0}">${p.title}</option>`;
