@@ -311,6 +311,7 @@ h3 { font-size: 1.25rem; }
   appearance: none; -webkit-appearance: none;
 }
 .quick-donate-bar select option { background: var(--brand-dark); color: #fff; }
+.quick-donate-bar select optgroup { background: var(--brand-dark); color: rgba(255,255,255,.55); }
 .quick-donate-bar select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23ffffff' stroke-width='2' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
