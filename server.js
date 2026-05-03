@@ -805,5 +805,5 @@ app.get('*', (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Hayır Limanı sitesi hazır → http://localhost:${PORT}`);
-  console.log('Varsayılan admin: admin@hayirlimani.com / admin123');
+  console.log('Varsayılan admin: info@hayirlimani.com / admin123');
 });

@@ -142,6 +142,7 @@ try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_link TEXT'); } catch {
 try { db.exec('ALTER TABLE activities ADD COLUMN regions TEXT DEFAULT ""'); } catch {}
 try { db.exec('ALTER TABLE campaigns ADD COLUMN completed INTEGER DEFAULT 0'); } catch {}
 try { db.exec('ALTER TABLE donations ADD COLUMN receipt_number INTEGER'); } catch {}
+db.prepare("UPDATE users SET email=? WHERE email=? AND role='admin'").run('info@hayirlimani.com', 'admin@hayirlimani.com');
 
 // Mevcut aktivitelere bölge ata (sadece bir kez çalışır)
 try {
@@ -236,7 +237,7 @@ function seed() {
   if (userCount === 0) {
     const hash = bcrypt.hashSync('admin123', 10);
     db.prepare('INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)')
-      .run('Site Yöneticisi', 'admin@hayirlimani.com', hash, 'admin');
+      .run('Site Yöneticisi', 'info@hayirlimani.com', hash, 'admin');
 
     const donorHash = bcrypt.hashSync('bagisci123', 10);
     db.prepare('INSERT INTO users(name,email,password_hash,role,phone) VALUES(?,?,?,?,?)')
