@@ -329,9 +329,22 @@
       `).join('');
 
       const qd = document.getElementById('qd-type');
-      qd.innerHTML = '<option value="">Seçiniz…</option>' + _allCats.map(c =>
-        `<option value="${c.slug}" data-price="${c.price || 0}" data-fixed="${c.fixed_price || 0}">${c.title}</option>`
-      ).join('');
+      const qdParents = _allCats.filter(c => !c.parent_id);
+      const qdChildrenOf = id => _allCats.filter(c => c.parent_id === id);
+      let qdOpts = '<option value="">Seçiniz…</option>';
+      qdParents.forEach(p => {
+        const subs = qdChildrenOf(p.id);
+        if (subs.length) {
+          qdOpts += `<optgroup label="${p.icon ? p.icon + ' ' : ''}${p.title}">`;
+          subs.forEach(s => {
+            qdOpts += `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">${s.title}</option>`;
+          });
+          qdOpts += '</optgroup>';
+        } else {
+          qdOpts += `<option value="${p.slug}" data-price="${p.price||0}" data-fixed="${p.fixed_price||0}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
+        }
+      });
+      qd.innerHTML = qdOpts;
       qd.addEventListener('change', () => {
         const opt = qd.options[qd.selectedIndex];
         const p = parseFloat(opt.dataset.price || 0);
