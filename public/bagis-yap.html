@@ -42,11 +42,12 @@
             <input type="number" id="amount" min="1" placeholder="Tutar (₺)" />
           </div>
         </div>
-        <div class="form-group">
+        <div class=”form-group”>
           <label>Açıklama (opsiyonel)</label>
-          <input type="text" id="note" placeholder="Açıklama kısmına “Bağış” yazabilirsiniz" />
+          <input type=”text” id=”note” placeholder=”Açıklama kısmına Bağış yazabilirsiniz” />
         </div>
-        <div id="guest-fields" class="hidden">
+
+        <div id=”guest-fields” class=”hidden”>
           <div class="grid-2">
             <div class="form-group"><label>Ad Soyad *</label><input type="text" id="gname" /></div>
             <div class="form-group"><label>E-posta *</label><input type="email" id="gemail" /></div>
@@ -64,6 +65,15 @@
         <p class="muted" style="font-size:.85rem;">
           💡 Bağış işleminizi gerçekleştirdikten sonra aşağıdaki <strong>Bağış Yaptım</strong> butonuna basarak bildirimde bulunun. Ekibimiz doğrulamayı yapıp makbuzunuzu e-posta ile iletecektir.
         </p>
+      </div>
+
+      <div id="vekalet-wrap" class="hidden">
+        <div class="vekalet-box">
+          <label class="vekalet-label">
+            <input type="checkbox" id="vekalet-check" />
+            <span>Kurban ibadetimi ifa etmek üzere <strong>Hayır Limanı Yardım Derneği</strong>'ne vekâlet veriyorum; kurbanın satın alınması, kesimleri ve dağıtımıyla ilgili tüm işlemlerin dernek adına gerçekleştirilmesini onaylıyorum.</span>
+          </label>
+        </div>
       </div>
 
       <div class="payment-actions">
@@ -119,6 +129,12 @@
           amtInput.style.cursor = '';
           amtInput.title = '';
         }
+
+        // Kurban kategorisi vekalet kutusu
+        const slug = opt?.dataset?.slug || '';
+        const isKurban = slug.includes('kurban');
+        document.getElementById('vekalet-wrap').classList.toggle('hidden', !isKurban);
+        if (!isKurban) document.getElementById('vekalet-check').checked = false;
       });
 
       const katParam = qs('kat');
@@ -149,6 +165,15 @@
     async function submitDonation() {
       const amt = parseFloat(document.getElementById('amount').value);
       if (!amt || amt <= 0) return alert('Lütfen geçerli bir tutar girin');
+
+      const vekaletWrap = document.getElementById('vekalet-wrap');
+      if (!vekaletWrap.classList.contains('hidden')) {
+        if (!document.getElementById('vekalet-check').checked) {
+          alert('Kurban bağışı için vekâlet onayı zorunludur. Lütfen vekâlet kutucuğunu işaretleyin.');
+          document.getElementById('vekalet-check').focus();
+          return;
+        }
+      }
       const cat = document.getElementById('category').value;
       const note = document.getElementById('note').value;
       const camp = qs('kampanya');

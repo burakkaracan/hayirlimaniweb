@@ -889,6 +889,30 @@ h3 { font-size: 1.25rem; }
 .iban-display .holder { font-weight: 600; color: var(--text); }
 .iban-display button { margin-top: 10px; }
 
+.vekalet-box {
+  background: #fff8e6;
+  border: 1.5px solid #e6a817;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.vekalet-label {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: .92rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+.vekalet-label input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
 .payment-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
 @media (max-width: 500px) { .payment-actions { grid-template-columns: 1fr; } }
 
