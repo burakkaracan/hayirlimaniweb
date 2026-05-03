@@ -765,7 +765,7 @@ function filterFiles(type, el) {
   if (!grid) return;
   if (rows.length === 0) { grid.innerHTML = '<div class="empty">Dosya yok</div>'; return; }
   grid.innerHTML = rows.map(f => `
-    <div class="fm-item" id="fm-${CSS.escape(f.name)}">
+    <div class="fm-item" id="fm-${CSS.escape(f.name + f.folder)}">
       <div class="fm-thumb" onclick="window.open('${f.url}','_blank')">
         ${f.type === 'image'
           ? `<img src="${f.url}" alt="" loading="lazy" />`
@@ -776,21 +776,22 @@ function filterFiles(type, el) {
       <div class="fm-info">
         <div class="fm-name" title="${escapeHtml(f.name)}">${escapeHtml(f.name.replace(/^\d+-/, ''))}</div>
         <div class="fm-meta">${fmFormatSize(f.size)} · ${new Date(f.mtime).toLocaleDateString('tr-TR')}</div>
+        <div class="fm-meta" style="color:var(--brand);opacity:.7">${f.folder}</div>
       </div>
       <div class="fm-actions">
         <button class="btn btn-ghost btn-sm" title="URL Kopyala" onclick="fmCopyUrl('${f.url}',this)">Kopyala</button>
-        <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteFile('${escapeHtml(f.name)}')">Sil</button>
+        <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteFile('${escapeHtml(f.name)}','${f.folder}')">Sil</button>
       </div>
     </div>
   `).join('');
 }
 
-async function deleteFile(name) {
+async function deleteFile(name, folder) {
   if (!confirm(`"${name.replace(/^\d+-/, '')}" silinecek. Emin misiniz?`)) return;
-  const r = await api(`/api/admin/files/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  const r = await api(`/api/admin/files/${encodeURIComponent(name)}?folder=${encodeURIComponent(folder)}`, { method: 'DELETE' });
   if (r.ok) {
-    _allFiles = _allFiles.filter(f => f.name !== name);
-    const el = document.getElementById('fm-' + CSS.escape(name));
+    _allFiles = _allFiles.filter(f => !(f.name === name && f.folder === folder));
+    const el = document.getElementById('fm-' + CSS.escape(name + folder));
     if (el) el.remove();
   }
 }

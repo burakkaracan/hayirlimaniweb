@@ -526,22 +526,33 @@ app.delete('/api/admin/donations/:id', requireAdmin, (req, res) => {
 const IMAGE_EXT = new Set(['.jpg','.jpeg','.png','.gif','.webp','.svg','.avif']);
 const VIDEO_EXT = new Set(['.mp4','.webm','.mov','.avi','.mkv']);
 
+function scanDir(dir, urlPrefix) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).map(name => {
+    try {
+      const fullPath = path.join(dir, name);
+      if (fs.statSync(fullPath).isDirectory()) return null;
+      const stat = fs.statSync(fullPath);
+      const ext = path.extname(name).toLowerCase();
+      return {
+        name,
+        url: `${urlPrefix}/${name}`,
+        folder: urlPrefix,
+        size: stat.size,
+        mtime: stat.mtime,
+        type: IMAGE_EXT.has(ext) ? 'image' : VIDEO_EXT.has(ext) ? 'video' : 'other'
+      };
+    } catch { return null; }
+  }).filter(Boolean);
+}
+
 app.get('/api/admin/files', requireAdmin, (_req, res) => {
   try {
-    const names = fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir) : [];
-    const files = names.map(name => {
-      try {
-        const stat = fs.statSync(path.join(uploadDir, name));
-        const ext = path.extname(name).toLowerCase();
-        return {
-          name,
-          url: `/uploads/${name}`,
-          size: stat.size,
-          mtime: stat.mtime,
-          type: IMAGE_EXT.has(ext) ? 'image' : VIDEO_EXT.has(ext) ? 'video' : 'other'
-        };
-      } catch { return null; }
-    }).filter(Boolean).sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
+    const publicImagesDir = path.join(__dirname, 'public', 'images');
+    const files = [
+      ...scanDir(uploadDir, '/uploads'),
+      ...scanDir(publicImagesDir, '/images'),
+    ].sort((a, b) => new Date(b.mtime) - new Date(a.mtime));
     res.json(files);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -550,7 +561,10 @@ app.get('/api/admin/files', requireAdmin, (_req, res) => {
 
 app.delete('/api/admin/files/:filename', requireAdmin, (req, res) => {
   const filename = path.basename(decodeURIComponent(req.params.filename));
-  const filePath = path.join(uploadDir, filename);
+  const folder = req.query.folder === '/images'
+    ? path.join(__dirname, 'public', 'images')
+    : uploadDir;
+  const filePath = path.join(folder, filename);
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Dosya bulunamadı' });
   fs.unlinkSync(filePath);
   res.json({ ok: true });
