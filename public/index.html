@@ -312,12 +312,14 @@
       'gida':           'İhtiyaç sahibi ailelere temel gıda maddelerini içeren koli göndererek sofralarına bereket katın. Her paket bir aileye haftalar boyu yetecek ürünleri kapsar.',
     };
 
-    let _cats = [], _catIdx = 0, _catTimer = null;
+    let _cats = [], _allCats = [], _catIdx = 0, _catTimer = null;
     const CAT_DUR = 5500;
 
     async function loadCategories() {
-      _cats = await api('/api/categories');
-      if (!_cats.length) return;
+      _allCats = await api('/api/categories');
+      if (!_allCats.length) return;
+      _cats = _allCats.filter(c => !c.parent_id);
+      if (!_cats.length) _cats = _allCats;
 
       document.getElementById('cat-tabs').innerHTML = _cats.map((c, i) => `
         <button class="cat-tab${i === 0 ? ' active' : ''}" onclick="selectCat(${i})">
@@ -327,7 +329,7 @@
       `).join('');
 
       const qd = document.getElementById('qd-type');
-      qd.innerHTML = '<option value="">Seçiniz…</option>' + _cats.map(c =>
+      qd.innerHTML = '<option value="">Seçiniz…</option>' + _allCats.map(c =>
         `<option value="${c.slug}" data-price="${c.price || 0}" data-fixed="${c.fixed_price || 0}">${c.title}</option>`
       ).join('');
       qd.addEventListener('change', () => {
@@ -358,16 +360,39 @@
       const media = c.cover_image
         ? `<img class="cat-panel-img" src="${c.cover_image}" alt="${c.title}" loading="lazy" />`
         : `<div class="cat-panel-placeholder">${CAT_ICONS[c.slug] || ''}</div>`;
+      const subs = _allCats.filter(s => s.parent_id === c.id);
+      const subcatHtml = subs.length ? `
+        <div class="cat-subcat-wrap">
+          <select id="cat-subcat-sel" class="cat-subcat-sel" onchange="updateCatDonateBtn('${c.slug}')">
+            <option value="">— Alt tür seçin —</option>
+            ${subs.map(s => `<option value="${s.slug}" data-price="${s.price||0}" data-fixed="${s.fixed_price||0}">${s.title}${s.price ? ' — ' + formatTL(s.price) : ''}</option>`).join('')}
+          </select>
+        </div>` : '';
       document.getElementById('cat-panel').innerHTML = `
         <div>
           <h3 class="cat-panel-title">${c.title}</h3>
           <p class="cat-panel-desc">${desc}</p>
+          ${subcatHtml}
           <div class="cat-panel-actions">
-            <a href="/bagis-yap.html?kat=${c.slug}" class="btn btn-accent">${svgIcon('heart')} Bağış Yap</a>
+            <a href="/bagis-yap.html?kat=${c.slug}" class="btn btn-accent" id="cat-donate-btn">${svgIcon('heart')} Bağış Yap</a>
           </div>
         </div>
         <div>${media}</div>
       `;
+    }
+
+    function updateCatDonateBtn(parentSlug) {
+      const sel = document.getElementById('cat-subcat-sel');
+      if (!sel) return;
+      const opt = sel.options[sel.selectedIndex];
+      const subSlug = opt.value;
+      const price = parseFloat(opt.dataset.price || 0);
+      const fixed = opt.dataset.fixed === '1';
+      const btn = document.getElementById('cat-donate-btn');
+      if (!btn) return;
+      let href = `/bagis-yap.html?kat=${subSlug || parentSlug}`;
+      if (subSlug && fixed && price > 0) href += `&tutar=${price}`;
+      btn.href = href;
     }
 
     function startCatRotation() {
