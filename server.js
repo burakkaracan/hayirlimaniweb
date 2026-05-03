@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
+const https = require('https');
 const { db, setSetting, getSetting } = require('./database');
 const { generateReceiptPDF } = require('./receipt');
 
@@ -59,7 +60,34 @@ const requireAdmin = (req, res, next) => {
 };
 
 function mailerSend(to, subject, html) {
-  if (process.env.SMTP_HOST) {
+  const apiKey = process.env.SMTP_PASS;
+  if (apiKey && apiKey.startsWith('re_')) {
+    const body = JSON.stringify({
+      from: process.env.SMTP_FROM || 'noreply@hayirlimani.com',
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html
+    });
+    const req = https.request({
+      hostname: 'api.resend.com',
+      path: '/emails',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body)
+      }
+    }, (res) => {
+      if (res.statusCode >= 400) {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => console.error('Mail gönderilemedi:', res.statusCode, data));
+      }
+    });
+    req.on('error', err => console.error('Mail gönderilemedi:', err.message));
+    req.write(body);
+    req.end();
+  } else if (process.env.SMTP_HOST) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT) || 587,
