@@ -184,7 +184,13 @@
       }
 
       slider.innerHTML = heroSlides.map((s, i) => {
-        const bg = s.media_url ? `background-image:url('${s.media_url}')` : `background:linear-gradient(135deg, #0d2b42, #1a3d5c)`;
+        const slideStyle = [];
+        if (s.media_url) {
+          slideStyle.push(`--slide-bg:url('${s.media_url}')`);
+          if (s.mobile_media_url) slideStyle.push(`--slide-mob-bg:url('${s.mobile_media_url}')`);
+        } else {
+          slideStyle.push('background:linear-gradient(135deg,#0d2b42,#1a3d5c)');
+        }
         const media = s.media_type === 'video' && s.media_url
           ? `<video autoplay muted playsinline src="${s.media_url}"></video>`
           : '';
@@ -195,7 +201,7 @@
           ? `<a href="${s.button2_link || s.button_link || '/faaliyetler.html'}" class="btn hero-btn-secondary btn-lg">${svgIcon('arrow_right')} ${s.button2_text}</a>`
           : '';
         return `
-          <div class="hero-slide ${i === 0 ? 'active' : ''}" style="${bg}" data-index="${i}">
+          <div class="hero-slide ${i === 0 ? 'active' : ''}${s.hide_overlay ? ' no-overlay' : ''}" style="${slideStyle.join(';')}" data-index="${i}">
             ${media}
             <div class="container hero-content">
               <h1>${s.title || ''}</h1>
@@ -281,7 +287,7 @@
         if (vidEl.readyState >= 1) setup();
         else { vidEl.addEventListener('loadedmetadata', setup, { once: true }); animateHeroDot(heroIndex, 8000); }
       } else {
-        const dur = 6000;
+        const dur = slide.duration ? slide.duration * 1000 : 6000;
         animateHeroDot(heroIndex, dur);
         heroTimer = setInterval(() => {
           heroIndex = (heroIndex + 1) % heroSlides.length;
@@ -292,14 +298,18 @@
 
     const _S = (p) => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     const CAT_ICONS = {
-      'kurban':        _S('<ellipse cx="9" cy="11" rx="5" ry="4"/><circle cx="16" cy="8" r="2.5"/><line x1="6" y1="15" x2="5.5" y2="20"/><line x1="9" y1="15" x2="9" y2="20"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="14.5" y1="10.5" x2="15" y2="20"/>'),
-      'su-kuyusu':     _S('<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'),
-      'kalici-eserler':_S('<path d="M3 22h18"/><path d="M5 22V10l7-7 7 7v12"/><path d="M9 22v-5h6v5"/>'),
-      'zekat':         _S('<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>'),
-      'acil-yardim':   _S('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'),
-      'egitim':        _S('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
-      'yetim':         _S('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
-      'gida':          _S('<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+      'kurban':           _S('<ellipse cx="11" cy="13" rx="6" ry="4.5"/><circle cx="17" cy="9" r="2.5"/><line x1="7" y1="17" x2="6" y2="21"/><line x1="11" y1="17.5" x2="11" y2="21"/><line x1="15" y1="17" x2="16" y2="21"/><line x1="17" y1="11.5" x2="17" y2="17.5"/>'),
+      'su-kuyusu':        _S('<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'),
+      'kalici-eserler':   _S('<path d="M3 22h18"/><path d="M5 22V10l7-7 7 7v12"/><path d="M9 22v-5h6v5"/>'),
+      'zekat':            _S('<path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'),
+      'acil-yardim':      _S('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'),
+      'egitim':           _S('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
+      'yetim':            _S('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+      'gida':             _S('<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+      'insani-yardim':    _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+      'gazze':            _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+      'gazze-insani-yardim': _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
+      'gazze-yardimi':    _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
     };
     const CAT_DESCS = {
       'kurban':         'Kurban bağışlarınızı ihtiyaç sahiplerine ulaştırıyor, kesim ve dağıtımı sizin adınıza güvenle gerçekleştiriyoruz. Yurt içi ve yurt dışında vekâleten kurban kesilmektedir.',

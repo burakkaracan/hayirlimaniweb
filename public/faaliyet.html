@@ -23,6 +23,7 @@
       const slug = qs('slug');
       const content = document.getElementById('content');
       if (!slug) { content.innerHTML = '<div class="empty">Faaliyet bulunamadı</div>'; return; }
+
       let item = null;
       try { item = await api('/api/activities/' + slug); } catch (e) {}
       if (!item || item.error) {
@@ -33,6 +34,20 @@
       const bg = item.cover_image ? `background-image:url('${item.cover_image}')` : '';
       const isCampaign = 'goal' in item;
       const pct = isCampaign && item.goal > 0 ? Math.min(100, Math.round((item.raised / item.goal) * 100)) : 0;
+
+      // Kategori bilgisini yükle
+      let donationBox = '';
+      if (!isCampaign && item.category_id) {
+        const allCats = await api('/api/categories');
+        const cat = allCats.find(c => c.id === item.category_id);
+        if (cat) {
+          const subcats = allCats.filter(c => c.parent_id === cat.id);
+          donationBox = renderFixedDonationBox(cat, subcats);
+        }
+      }
+      if (!donationBox) {
+        donationBox = renderStandardDonationBox(isCampaign, item);
+      }
 
       content.innerHTML = `
         <div class="breadcrumb muted" style="margin-bottom:20px;"><a href="/">Anasayfa</a> / <a href="/faaliyetler.html">Faaliyetler</a> / ${item.title}</div>
@@ -57,35 +72,73 @@
               ${(item.body || item.summary || item.short_description || '').split('\n').map(p => `<p>${escapeHtml(p)}</p>`).join('')}
             </div>
           </div>
-          <aside>
-            <div class="donate-box">
-              <h3>Bu ${isCampaign ? 'kampanyaya' : 'çalışmaya'} <span class="heading-accent">destek olun</span></h3>
-              <p class="muted" style="margin-bottom:16px;">Bağışınız doğrudan bu projenin fonuna aktarılır.</p>
-              <div class="amounts" style="grid-template-columns:1fr 1fr;">
-                <button class="amount-btn" data-val="250">250 ₺</button>
-                <button class="amount-btn" data-val="500">500 ₺</button>
-                <button class="amount-btn" data-val="1000">1000 ₺</button>
-                <button class="amount-btn" data-val="2500">2500 ₺</button>
-              </div>
-              <div class="amount-custom" style="margin-top:12px;">
-                <input type="number" id="camp-amount" placeholder="Tutar (₺)" />
-              </div>
-              <button class="btn btn-primary btn-block btn-lg mt-4" onclick="donateToItem('${isCampaign ? 'campaign' : 'activity'}', ${item.id}, '${item.slug}')">Bağış Yap</button>
-            </div>
-          </aside>
+          <aside>${donationBox}</aside>
         </div>
       `;
+
       document.querySelectorAll('.amount-btn').forEach(b => {
         b.addEventListener('click', () => {
           document.querySelectorAll('.amount-btn').forEach(x => x.classList.remove('active'));
           b.classList.add('active');
-          document.getElementById('camp-amount').value = b.dataset.val;
+          const inp = document.getElementById('camp-amount');
+          if (inp) inp.value = b.dataset.val;
         });
       });
     });
 
+    function renderFixedDonationBox(cat, subcats) {
+      const hasSubs = subcats.length > 0;
+      const items = hasSubs ? subcats : (cat.price > 0 ? [cat] : []);
+      if (!items.length) return renderStandardDonationBoxHtml(false);
+
+      const rows = items.map(c => `
+        <div class="fdi-row">
+          <div>
+            <div class="fdi-title">${c.title}</div>
+            <div class="fdi-price">${formatTL(c.price)}</div>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="donateFixed('${c.slug}', ${c.price})">Seç</button>
+        </div>`).join('');
+
+      return `
+        <div class="donate-box">
+          <h3>Bu çalışmaya <span class="heading-accent">destek olun</span></h3>
+          <p class="muted" style="margin-bottom:16px;">Bağış türünü seçerek hemen destek olabilirsiniz.</p>
+          <div class="fixed-donation-list">${rows}</div>
+        </div>`;
+    }
+
+    function renderStandardDonationBox(isCampaign, item) {
+      return renderStandardDonationBoxHtml(isCampaign, item);
+    }
+
+    function renderStandardDonationBoxHtml(isCampaign, item) {
+      const kind = isCampaign ? 'campaign' : 'activity';
+      const id = item ? item.id : 0;
+      const slug = item ? item.slug : '';
+      return `
+        <div class="donate-box">
+          <h3>Bu ${isCampaign ? 'kampanyaya' : 'çalışmaya'} <span class="heading-accent">destek olun</span></h3>
+          <p class="muted" style="margin-bottom:16px;">Bağışınız doğrudan bu projenin fonuna aktarılır.</p>
+          <div class="amounts" style="grid-template-columns:1fr 1fr;">
+            <button class="amount-btn" data-val="250">250 ₺</button>
+            <button class="amount-btn" data-val="500">500 ₺</button>
+            <button class="amount-btn" data-val="1000">1000 ₺</button>
+            <button class="amount-btn" data-val="2500">2500 ₺</button>
+          </div>
+          <div class="amount-custom" style="margin-top:12px;">
+            <input type="number" id="camp-amount" placeholder="Tutar (₺)" />
+          </div>
+          <button class="btn btn-primary btn-block btn-lg mt-4" onclick="donateToItem('${kind}', ${id}, '${slug}')">Bağış Yap</button>
+        </div>`;
+    }
+
+    function donateFixed(slug, price) {
+      location.href = `/bagis-yap.html?kat=${slug}&tutar=${price}`;
+    }
+
     function donateToItem(kind, id, slug) {
-      const amt = document.getElementById('camp-amount').value;
+      const amt = document.getElementById('camp-amount')?.value;
       if (!amt || amt <= 0) return alert('Lütfen bir tutar girin');
       const p = new URLSearchParams({ tutar: amt });
       if (kind === 'campaign') p.set('kampanya', id);

@@ -142,6 +142,10 @@ try { db.exec('ALTER TABLE hero_slides ADD COLUMN button2_link TEXT'); } catch {
 try { db.exec('ALTER TABLE activities ADD COLUMN regions TEXT DEFAULT ""'); } catch {}
 try { db.exec('ALTER TABLE campaigns ADD COLUMN completed INTEGER DEFAULT 0'); } catch {}
 try { db.exec('ALTER TABLE donations ADD COLUMN receipt_number INTEGER'); } catch {}
+try { db.exec('ALTER TABLE hero_slides ADD COLUMN duration INTEGER DEFAULT NULL'); } catch {}
+try { db.exec("ALTER TABLE hero_slides ADD COLUMN mobile_media_url TEXT DEFAULT ''"); } catch {}
+try { db.exec('ALTER TABLE hero_slides ADD COLUMN hide_overlay INTEGER DEFAULT 0'); } catch {}
+try { db.exec('ALTER TABLE activities ADD COLUMN category_id INTEGER DEFAULT NULL'); } catch {}
 db.prepare("UPDATE users SET email=? WHERE email=? AND role='admin'").run('info@hayirlimani.com', 'admin@hayirlimani.com');
 
 // Mevcut aktivitelere bölge ata (sadece bir kez çalışır)

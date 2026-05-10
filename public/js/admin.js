@@ -516,7 +516,9 @@ const sections = {
       </table></div>`
   }); },
 
-  async activities() { await renderCrudSection({
+  async activities() {
+    window._adminCats = await api('/api/admin/categories');
+    await renderCrudSection({
     key: 'activities', title: 'Faaliyetler',
     fields: [
       { k: 'title', label: 'Başlık', wide: true },
@@ -526,6 +528,7 @@ const sections = {
       { k: 'date', label: 'Tarih', type: 'date' },
       { k: 'active', label: 'Aktif', type: 'checkbox' },
       { k: 'regions', label: 'Güncel Projeler Bölgeleri', type: 'regions', wide: true },
+      { k: 'category_id', label: 'Bağış Türü (faaliyet sayfasında şablon belirler)', type: 'category', wide: true },
       { k: 'short_description', label: 'Kısa Açıklama', type: 'textarea', wide: true },
       { k: 'body', label: 'Detay Metni', type: 'textarea', wide: true },
     ],
@@ -564,8 +567,11 @@ const sections = {
       { k: 'button2_text', label: '2. Buton Metni (Daha Fazla — boş bırakılabilir)' },
       { k: 'button2_link', label: '2. Buton Linki' },
       { k: 'media_url', label: 'Görsel/Video URL', wide: true },
+      { k: 'mobile_media_url', label: 'Mobil Görsel URL (boş bırakılırsa ana görsel kullanılır)', wide: true },
       { k: 'media_type', label: 'Medya Tipi', type: 'select', options: [['image', 'Görsel'], ['video', 'Video']] },
+      { k: 'duration', label: 'Slide Süresi (saniye — boş bırakılırsa varsayılan 6 sn)', type: 'number' },
       { k: 'sort_order', label: 'Sıra', type: 'number' },
+      { k: 'hide_overlay', label: 'Alt Gölgeyi Gizle', type: 'checkbox' },
       { k: 'active', label: 'Aktif', type: 'checkbox' },
     ],
     list: (rows) => `
@@ -1084,7 +1090,15 @@ function openFormModal(key, fields, row, title) {
             </div>
           </div>`;
         }
-        if (f.k === 'media_url' || f.k === 'cover_image') return `<div class="${cls}">
+        if (f.type === 'category') {
+          const cats = (window._adminCats || []).filter(c => !c.parent_id);
+          return `<div class="${cls}"><label>${f.label}</label>
+            <select name="${f.k}">
+              <option value="">— Bağış türü bağlama (isteğe bağlı) —</option>
+              ${cats.map(c => `<option value="${c.id}" ${String(v) === String(c.id) ? 'selected' : ''}>${c.title}</option>`).join('')}
+            </select></div>`;
+        }
+        if (f.k === 'media_url' || f.k === 'cover_image' || f.k === 'mobile_media_url') return `<div class="${cls}">
           <label>${f.label}</label>
           <div style="display:flex;gap:8px;align-items:center">
             <input type="text" name="${f.k}" id="upload_url_${f.k}" value="${escapeHtml(v)}" style="flex:1" placeholder="URL girin veya dosya yükleyin" />
@@ -1134,6 +1148,7 @@ async function saveItem(key, id) {
     if (!el) return;
     if (f.type === 'checkbox') data[f.k] = el.checked ? 1 : 0;
     else if (f.type === 'number') data[f.k] = parseFloat(el.value) || 0;
+    else if (f.type === 'category') data[f.k] = el.value ? parseInt(el.value) : null;
     else data[f.k] = el.value;
   });
   if (!data.slug && data.title) {
