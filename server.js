@@ -681,15 +681,15 @@ app.get('/api/admin/hero', requireAdmin, (_req, res) => {
   res.json(db.prepare('SELECT * FROM hero_slides ORDER BY sort_order').all());
 });
 app.post('/api/admin/hero', requireAdmin, (req, res) => {
-  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active, duration, mobile_media_url, hide_overlay } = req.body;
-  const info = db.prepare('INSERT INTO hero_slides(title,subtitle,slide_icon,button_text,button_link,button2_text,button2_link,media_url,media_type,sort_order,active,duration,mobile_media_url,hide_overlay) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || 'Bağış Yap', button_link || '/bagis-yap.html', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, duration ? parseInt(duration) : null, mobile_media_url || '', hide_overlay ? 1 : 0);
+  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active, duration, mobile_media_url, hide_overlay, text_color } = req.body;
+  const info = db.prepare('INSERT INTO hero_slides(title,subtitle,slide_icon,button_text,button_link,button2_text,button2_link,media_url,media_type,sort_order,active,duration,mobile_media_url,hide_overlay,text_color) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || 'Bağış Yap', button_link || '/bagis-yap.html', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, duration ? parseInt(duration) : null, mobile_media_url || '', hide_overlay ? 1 : 0, text_color || '#ffffff');
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 app.put('/api/admin/hero/:id', requireAdmin, (req, res) => {
-  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active, duration, mobile_media_url, hide_overlay } = req.body;
-  db.prepare('UPDATE hero_slides SET title=?,subtitle=?,slide_icon=?,button_text=?,button_link=?,button2_text=?,button2_link=?,media_url=?,media_type=?,sort_order=?,active=?,duration=?,mobile_media_url=?,hide_overlay=? WHERE id=?')
-    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || '', button_link || '', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, duration ? parseInt(duration) : null, mobile_media_url || '', hide_overlay ? 1 : 0, req.params.id);
+  const { title, subtitle, slide_icon, button_text, button_link, button2_text, button2_link, media_url, media_type, sort_order, active, duration, mobile_media_url, hide_overlay, text_color } = req.body;
+  db.prepare('UPDATE hero_slides SET title=?,subtitle=?,slide_icon=?,button_text=?,button_link=?,button2_text=?,button2_link=?,media_url=?,media_type=?,sort_order=?,active=?,duration=?,mobile_media_url=?,hide_overlay=?,text_color=? WHERE id=?')
+    .run(title || '', subtitle || '', slide_icon || '🌙', button_text || '', button_link || '', button2_text || '', button2_link || '', media_url || '', media_type || 'image', sort_order || 0, active ?? 1, duration ? parseInt(duration) : null, mobile_media_url || '', hide_overlay ? 1 : 0, text_color || '#ffffff', req.params.id);
   res.json({ ok: true });
 });
 app.delete('/api/admin/hero/:id', requireAdmin, (req, res) => {

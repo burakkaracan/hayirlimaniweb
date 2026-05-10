@@ -145,6 +145,7 @@ try { db.exec('ALTER TABLE donations ADD COLUMN receipt_number INTEGER'); } catc
 try { db.exec('ALTER TABLE hero_slides ADD COLUMN duration INTEGER DEFAULT NULL'); } catch {}
 try { db.exec("ALTER TABLE hero_slides ADD COLUMN mobile_media_url TEXT DEFAULT ''"); } catch {}
 try { db.exec('ALTER TABLE hero_slides ADD COLUMN hide_overlay INTEGER DEFAULT 0'); } catch {}
+try { db.exec("ALTER TABLE hero_slides ADD COLUMN text_color TEXT DEFAULT '#ffffff'"); } catch {}
 try { db.exec('ALTER TABLE activities ADD COLUMN category_id INTEGER DEFAULT NULL'); } catch {}
 db.prepare("UPDATE users SET email=? WHERE email=? AND role='admin'").run('info@hayirlimani.com', 'admin@hayirlimani.com');
 

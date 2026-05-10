@@ -203,8 +203,8 @@
         return `
           <div class="hero-slide ${i === 0 ? 'active' : ''}${s.hide_overlay ? ' no-overlay' : ''}" style="${slideStyle.join(';')}" data-index="${i}">
             ${media}
-            <div class="container hero-content">
-              <h1>${s.title || ''}</h1>
+            <div class="container hero-content" style="${s.text_color && s.text_color !== '#ffffff' ? `color:${s.text_color}` : ''}">
+              <h1 style="${s.text_color ? `color:${s.text_color}` : ''}">${s.title || ''}</h1>
               <p>${s.subtitle || ''}</p>
               ${btn1 || btn2 ? `<div class="hero-btns">${btn1}${btn2}</div>` : ''}
             </div>

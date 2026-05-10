@@ -570,6 +570,7 @@ const sections = {
       { k: 'mobile_media_url', label: 'Mobil Görsel URL (boş bırakılırsa ana görsel kullanılır)', wide: true },
       { k: 'media_type', label: 'Medya Tipi', type: 'select', options: [['image', 'Görsel'], ['video', 'Video']] },
       { k: 'duration', label: 'Slide Süresi (saniye — boş bırakılırsa varsayılan 6 sn)', type: 'number' },
+      { k: 'text_color', label: 'Metin Rengi', type: 'color' },
       { k: 'sort_order', label: 'Sıra', type: 'number' },
       { k: 'hide_overlay', label: 'Alt Gölgeyi Gizle', type: 'checkbox' },
       { k: 'active', label: 'Aktif', type: 'checkbox' },
@@ -1060,7 +1061,7 @@ function openFormModal(key, fields, row, title) {
     <h3>${title}</h3>
     <div class="data-form" id="form-fields">
       ${fields.map(f => {
-        const v = row[f.k] ?? (f.type === 'checkbox' ? 1 : '');
+        const v = row[f.k] ?? (f.type === 'checkbox' ? 1 : f.type === 'color' ? '#ffffff' : '');
         const cls = f.wide ? 'wide' : '';
         if (f.type === 'textarea') return `<div class="${cls}"><label>${f.label}</label><textarea name="${f.k}" rows="3">${escapeHtml(v)}</textarea></div>`;
         if (f.type === 'checkbox') return `<div class="${cls}"><label><input type="checkbox" name="${f.k}" ${v ? 'checked' : ''}/> ${f.label}</label></div>`;
