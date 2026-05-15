@@ -44,27 +44,44 @@ const NAV_ICONS = {
 };
 
 function renderShell() {
+  const NAV_LABELS = {
+    dashboard:'Panel', donations:'Bağış Onayları', users:'Bağışçılar',
+    messages:'Mesajlar', categories:'Bağış Kategorileri', campaigns:'Kampanyalar',
+    activities:'Faaliyetler', files:'Dosya Yöneticisi', hero:'Hero Slider',
+    boards:'Yetkili Kurullar', documents:'Belgeler', menus:'Menü Yönetimi',
+    bulk:'Toplu Mail', settings:'Site Ayarları'
+  };
   document.getElementById('admin-root').innerHTML = `
     <div class="admin-shell">
-      <aside class="admin-sidebar">
+      <header class="admin-topbar">
+        <button class="admin-burger" id="admin-burger" onclick="toggleAdminNav()" aria-label="Menüyü Aç">
+          <span></span><span></span><span></span>
+        </button>
+        <a href="/" style="display:flex;align-items:center;line-height:0;">
+          <img src="/images/logo-white.png" alt="Hayır Limanı" style="height:30px;" />
+        </a>
+        <span id="admin-section-title" class="admin-topbar-title"></span>
+      </header>
+      <div class="admin-overlay" id="admin-overlay" onclick="closeAdminNav()"></div>
+      <aside class="admin-sidebar" id="admin-sidebar">
         <a href="/" class="logo" style="display:block; padding: 10px 14px 20px;">
           <img src="/images/logo-white.png" alt="Hayır Limanı" class="logo-img" style="max-height:44px;" />
         </a>
         <nav class="admin-nav">
-          <a href="#dashboard" data-s="dashboard">${NAV_ICONS.dashboard} Panel</a>
-          <a href="#donations" data-s="donations">${NAV_ICONS.donations} Bağış Onayları</a>
-          <a href="#users" data-s="users">${NAV_ICONS.users} Bağışçılar</a>
-          <a href="#messages" data-s="messages">${NAV_ICONS.messages} Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
-          <a href="#categories" data-s="categories">${NAV_ICONS.categories} Bağış Kategorileri</a>
-          <a href="#campaigns" data-s="campaigns">${NAV_ICONS.campaigns} Kampanyalar</a>
-          <a href="#activities" data-s="activities">${NAV_ICONS.activities} Faaliyetler</a>
-          <a href="#files" data-s="files">${NAV_ICONS.files} Dosya Yöneticisi</a>
-          <a href="#hero" data-s="hero">${NAV_ICONS.hero} Hero Slider</a>
-          <a href="#boards" data-s="boards">${NAV_ICONS.boards} Yetkili Kurullar</a>
-          <a href="#documents" data-s="documents">${NAV_ICONS.documents} Belgeler</a>
-          <a href="#menus" data-s="menus">${NAV_ICONS.menus} Menü Yönetimi</a>
-          <a href="#bulk" data-s="bulk">${NAV_ICONS.bulk} Toplu Mail</a>
-          <a href="#settings" data-s="settings">${NAV_ICONS.settings} Site Ayarları</a>
+          <a href="#dashboard"  data-s="dashboard"  onclick="closeAdminNav()">${NAV_ICONS.dashboard} Panel</a>
+          <a href="#donations"  data-s="donations"  onclick="closeAdminNav()">${NAV_ICONS.donations} Bağış Onayları</a>
+          <a href="#users"      data-s="users"      onclick="closeAdminNav()">${NAV_ICONS.users} Bağışçılar</a>
+          <a href="#messages"   data-s="messages"   onclick="closeAdminNav()">${NAV_ICONS.messages} Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
+          <a href="#categories" data-s="categories" onclick="closeAdminNav()">${NAV_ICONS.categories} Bağış Kategorileri</a>
+          <a href="#campaigns"  data-s="campaigns"  onclick="closeAdminNav()">${NAV_ICONS.campaigns} Kampanyalar</a>
+          <a href="#activities" data-s="activities" onclick="closeAdminNav()">${NAV_ICONS.activities} Faaliyetler</a>
+          <a href="#files"      data-s="files"      onclick="closeAdminNav()">${NAV_ICONS.files} Dosya Yöneticisi</a>
+          <a href="#hero"       data-s="hero"       onclick="closeAdminNav()">${NAV_ICONS.hero} Hero Slider</a>
+          <a href="#boards"     data-s="boards"     onclick="closeAdminNav()">${NAV_ICONS.boards} Yetkili Kurullar</a>
+          <a href="#documents"  data-s="documents"  onclick="closeAdminNav()">${NAV_ICONS.documents} Belgeler</a>
+          <a href="#menus"      data-s="menus"      onclick="closeAdminNav()">${NAV_ICONS.menus} Menü Yönetimi</a>
+          <a href="#bulk"       data-s="bulk"       onclick="closeAdminNav()">${NAV_ICONS.bulk} Toplu Mail</a>
+          <a href="#settings"   data-s="settings"   onclick="closeAdminNav()">${NAV_ICONS.settings} Site Ayarları</a>
           <a href="/" target="_blank">${NAV_ICONS.external} Siteye Dön</a>
         </nav>
       </aside>
@@ -73,11 +90,25 @@ function renderShell() {
       </main>
     </div>
   `;
+  window._adminNavLabels = NAV_LABELS;
+}
+
+function toggleAdminNav() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('admin-overlay').classList.toggle('open');
+  document.getElementById('admin-burger').classList.toggle('open');
+}
+function closeAdminNav() {
+  document.getElementById('admin-sidebar')?.classList.remove('open');
+  document.getElementById('admin-overlay')?.classList.remove('open');
+  document.getElementById('admin-burger')?.classList.remove('open');
 }
 
 function switchSection(s) {
   adminState.section = s;
   document.querySelectorAll('.admin-nav a[data-s]').forEach(a => a.classList.toggle('active', a.dataset.s === s));
+  const titleEl = document.getElementById('admin-section-title');
+  if (titleEl && window._adminNavLabels) titleEl.textContent = window._adminNavLabels[s] || '';
   const render = sections[s] || sections.dashboard;
   render();
 }
