@@ -340,13 +340,18 @@ let _chatBadgeInterval = null;
 function renderWidgets() {
   if (document.querySelector('.wa-float')) return;
   const s = appSettings;
+
+  // Wrapper grup (sabit konumlu, mobilde toggle ile açılır)
+  const group = document.createElement('div');
+  group.className = 'float-group';
+
   const wa = document.createElement('a');
   wa.className = 'wa-float';
   wa.href = `https://wa.me/${s.whatsapp || '905368217979'}?text=${encodeURIComponent('Merhaba Hayır Limanı Derneği, bilgi almak istiyorum.')}`;
   wa.target = '_blank'; wa.rel = 'noopener';
   wa.setAttribute('aria-label', 'WhatsApp');
   wa.innerHTML = svgIcon('wa');
-  document.body.appendChild(wa);
+  group.appendChild(wa);
 
   const chat = document.createElement('button');
   chat.className = 'chat-float';
@@ -356,7 +361,27 @@ function renderWidgets() {
     document.getElementById('chat-window').classList.toggle('open');
     loadChatThread();
   });
-  document.body.appendChild(chat);
+  group.appendChild(chat);
+
+  // Mobil toggle butonu
+  const toggle = document.createElement('button');
+  toggle.className = 'float-toggle';
+  toggle.setAttribute('aria-label', 'İletişim');
+  toggle.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    group.classList.toggle('expanded');
+  });
+  group.appendChild(toggle);
+
+  document.body.appendChild(group);
+
+  // Dışarı tıklanınca kapat
+  document.addEventListener('click', (e) => {
+    if (!group.contains(e.target) && !document.getElementById('chat-window')?.contains(e.target)) {
+      group.classList.remove('expanded');
+    }
+  });
 
   const fileAccept = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip';
   const chatBox = document.createElement('div');

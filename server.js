@@ -149,7 +149,7 @@ app.get('/api/menu', (_req, res) => {
 
 app.get('/api/me', (req, res) => {
   if (!req.session.userId) return res.json({ user: null });
-  const u = db.prepare('SELECT id,name,email,phone,role FROM users WHERE id=?').get(req.session.userId);
+  const u = db.prepare('SELECT id,name,email,phone,address,role FROM users WHERE id=?').get(req.session.userId);
   res.json({ user: u || null });
 });
 
@@ -160,8 +160,9 @@ app.post('/api/register', (req, res) => {
   const exists = db.prepare('SELECT 1 FROM users WHERE email=?').get(email);
   if (exists) return res.status(400).json({ error: 'Bu e-posta zaten kayıtlı' });
   const hash = bcrypt.hashSync(password, 10);
-  const info = db.prepare('INSERT INTO users(name,email,phone,password_hash,role) VALUES(?,?,?,?,?)')
-    .run(name, email, phone || '', hash, 'donor');
+  const { address } = req.body || {};
+  const info = db.prepare('INSERT INTO users(name,email,phone,address,password_hash,role) VALUES(?,?,?,?,?,?)')
+    .run(name, email, phone || '', address || '', hash, 'donor');
   req.session.userId = info.lastInsertRowid;
   // Daha önce aynı e-postayla yapılmış misafir bağışları bu hesaba bağla
   db.prepare('UPDATE donations SET user_id=? WHERE user_email=? AND user_id IS NULL').run(info.lastInsertRowid, email);
@@ -192,6 +193,16 @@ app.post('/api/change-password', requireAuth, (req, res) => {
   db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(newPassword, 10), req.session.userId);
   mailerSend(u2.email, 'Şifreniz Değiştirildi',
     `<p>Sayın ${u2.name},</p><p>Hesabınızın şifresi başarıyla güncellendi.</p><p>Bu işlemi siz yapmadıysanız lütfen hemen <a href="/iletisim.html">bizimle iletişime geçin</a>.</p><p>Hayır Limanı Yardım Derneği</p>`);
+  res.json({ ok: true });
+});
+
+app.patch('/api/profile', requireAuth, (req, res) => {
+  const { name, email, phone, address } = req.body || {};
+  if (!name?.trim() || !email?.trim()) return res.status(400).json({ error: 'Ad Soyad ve e-posta zorunludur' });
+  const conflict = db.prepare('SELECT id FROM users WHERE email=? AND id!=?').get(email.trim(), req.session.userId);
+  if (conflict) return res.status(400).json({ error: 'Bu e-posta adresi başka bir hesapta kullanılıyor' });
+  db.prepare('UPDATE users SET name=?, email=?, phone=?, address=? WHERE id=?')
+    .run(name.trim(), email.trim(), phone?.trim() || '', address?.trim() || '', req.session.userId);
   res.json({ ok: true });
 });
 

@@ -30,6 +30,10 @@
           <input type="tel" name="phone" placeholder="0555 000 00 00" />
         </div>
         <div class="form-group">
+          <label>Adres <span style="font-weight:400;color:#64748b;font-size:.85em;">(isteğe bağlı)</span></label>
+          <textarea name="address" rows="2" placeholder="Mahalle, cadde, il…" style="resize:vertical;"></textarea>
+        </div>
+        <div class="form-group">
           <label>Parola</label>
           <input type="password" name="password" minlength="6" required />
         </div>
@@ -51,7 +55,7 @@
       const msg = document.getElementById('form-msg');
       const r = await api('/api/register', {
         method: 'POST',
-        body: { name: f.name.value, email: f.email.value, phone: f.phone.value, password: f.password.value }
+        body: { name: f.name.value, email: f.email.value, phone: f.phone.value, address: f.address.value, password: f.password.value }
       });
       if (r.ok) {
         msg.className = 'form-msg success';

@@ -102,16 +102,19 @@
           </div>
         `;
       } else if (tab === 'bilgilerim') {
+        const roleLabel = currentUser.role === 'admin' ? 'Yönetici' : currentUser.role === 'staff' ? 'Personel' : 'Bağışçı';
         host.innerHTML = `
           <div class="card">
             <h3 style="margin-bottom:16px;">Hesap Bilgilerim</h3>
+            <div id="profile-msg" class="form-msg" style="display:none"></div>
             <div class="grid-2">
-              <div class="form-group"><label>Ad Soyad</label><input type="text" value="${currentUser.name}" readonly /></div>
-              <div class="form-group"><label>E-posta</label><input type="email" value="${currentUser.email}" readonly /></div>
-              <div class="form-group"><label>Telefon</label><input type="tel" value="${currentUser.phone || ''}" readonly /></div>
-              <div class="form-group"><label>Rol</label><input type="text" value="${currentUser.role === 'admin' ? 'Yönetici' : currentUser.role === 'staff' ? 'Personel' : 'Bağışçı'}" readonly /></div>
+              <div class="form-group"><label>Ad Soyad</label><input type="text" id="pf-name" value="${escHtml(currentUser.name)}" /></div>
+              <div class="form-group"><label>E-posta</label><input type="email" id="pf-email" value="${escHtml(currentUser.email)}" /></div>
+              <div class="form-group"><label>Telefon</label><input type="tel" id="pf-phone" value="${escHtml(currentUser.phone || '')}" /></div>
+              <div class="form-group"><label>Rol</label><input type="text" value="${roleLabel}" readonly style="background:var(--gray-50,#f8fafc);color:var(--muted,#64748b);cursor:default;" /></div>
             </div>
-            <p class="muted" style="font-size:.9rem;">Bilgilerinizi güncellemek için <a href="/iletisim.html">bize ulaşın</a>.</p>
+            <div class="form-group"><label>Adres <span style="font-weight:400;color:var(--muted,#64748b);font-size:.85em;">(isteğe bağlı)</span></label><textarea id="pf-address" rows="2" style="resize:vertical;">${escHtml(currentUser.address || '')}</textarea></div>
+            <button class="btn btn-primary" onclick="doUpdateProfile()">Kaydet</button>
           </div>
         `;
       } else if (tab === 'sifre') {
@@ -125,6 +128,38 @@
             <button class="btn btn-primary" onclick="doChangePassword()">Şifremi Güncelle</button>
           </div>
         `;
+      }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    async function doUpdateProfile() {
+      const name    = document.getElementById('pf-name')?.value.trim();
+      const email   = document.getElementById('pf-email')?.value.trim();
+      const phone   = document.getElementById('pf-phone')?.value.trim();
+      const address = document.getElementById('pf-address')?.value.trim();
+      const msg = document.getElementById('profile-msg');
+      const show = (text, ok) => {
+        msg.textContent = text;
+        msg.className = 'form-msg ' + (ok ? 'success' : 'error');
+        msg.style.display = 'block';
+      };
+      if (!name || !email) return show('Ad Soyad ve e-posta zorunludur.', false);
+      const r = await api('/api/profile', { method: 'PATCH', body: { name, email, phone, address } });
+      if (r.ok) {
+        currentUser = { ...currentUser, name, email, phone, address };
+        show('Bilgileriniz başarıyla güncellendi.', true);
+        // Sidebar'daki isim ve e-postayı güncelle
+        const pname = document.querySelector('.pname');
+        const pmail = document.querySelector('.pmail');
+        const avatar = document.querySelector('.avatar');
+        if (pname) pname.textContent = name;
+        if (pmail) pmail.textContent = email;
+        if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+      } else {
+        show(r.error || 'Bir hata oluştu.', false);
       }
     }
 
