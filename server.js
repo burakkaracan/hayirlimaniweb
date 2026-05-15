@@ -79,16 +79,20 @@ const MAIL_SIGNATURE = `
   </a>
 </div>`;
 
-function mailerSend(to, subject, html) {
+function mailerSend(to, subject, html, attachment = null) {
   const fullHtml = html + MAIL_SIGNATURE;
   const apiKey = process.env.SMTP_PASS;
   if (apiKey && apiKey.startsWith('re_')) {
-    const body = JSON.stringify({
+    const bodyObj = {
       from: process.env.SMTP_FROM || 'noreply@hayirlimani.com',
       to: Array.isArray(to) ? to : [to],
       subject,
       html: fullHtml
-    });
+    };
+    if (attachment) {
+      bodyObj.attachments = [{ filename: attachment.filename, content: attachment.buffer.toString('base64') }];
+    }
+    const body = JSON.stringify(bodyObj);
     const req = https.request({
       hostname: 'api.resend.com',
       path: '/emails',
@@ -115,12 +119,16 @@ function mailerSend(to, subject, html) {
       secure: process.env.SMTP_SECURE === 'true',
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
     });
-    transporter.sendMail({
+    const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to, subject, html: fullHtml
-    }).catch(err => console.error('Mail gönderilemedi:', err.message));
+    };
+    if (attachment) {
+      mailOptions.attachments = [{ filename: attachment.filename, content: attachment.buffer }];
+    }
+    transporter.sendMail(mailOptions).catch(err => console.error('Mail gönderilemedi:', err.message));
   } else {
-    const line = `[MAIL] to=${to} subject="${subject}" at=${new Date().toISOString()}\n`;
+    const line = `[MAIL] to=${to} subject="${subject}"${attachment ? ` attachment=${attachment.filename}` : ''} at=${new Date().toISOString()}\n`;
     fs.appendFile(path.join(__dirname, 'mail.log'), line + fullHtml + '\n---\n', () => {});
     console.log(line);
   }
@@ -155,6 +163,8 @@ app.post('/api/register', (req, res) => {
   const info = db.prepare('INSERT INTO users(name,email,phone,password_hash,role) VALUES(?,?,?,?,?)')
     .run(name, email, phone || '', hash, 'donor');
   req.session.userId = info.lastInsertRowid;
+  // Daha önce aynı e-postayla yapılmış misafir bağışları bu hesaba bağla
+  db.prepare('UPDATE donations SET user_id=? WHERE user_email=? AND user_id IS NULL').run(info.lastInsertRowid, email);
   mailerSend(email, 'Hayır Limanı Derneği\'ne Hoşgeldiniz',
     `<h2>Hoşgeldiniz ${name},</h2><p>Hayır Limanı Derneği bağışçı ailesine katıldığınız için teşekkür ederiz. Bağışlarınızı ve dekontlarınızı profilinizden takip edebilirsiniz.</p><p>Her mazlumun kıyısında… birlikte olmanın gücüyle.</p>`);
   res.json({ ok: true });
@@ -492,8 +502,15 @@ app.post('/api/admin/donations/:id/approve', requireAdmin, async (req, res) => {
       .run('approved', `/uploads/${receiptName}`, adminComment, receiptNumber, id);
 
     if (d.user_email) {
-      mailerSend(d.user_email, 'Bağışınız Onaylandı',
-        `<p>Sayın ${d.user_name},</p><p>${d.amount} TL tutarındaki bağışınız onaylanmıştır. PDF makbuzunuza profil sayfanızdaki "Makbuzlarım" bölümünden ulaşabilirsiniz.</p><p>Hayır Limanı Yardım Derneği</p>`);
+      const profileNote = d.user_id
+        ? ' Makbuzunuza ayrıca profil sayfanızdaki "Makbuzlarım" bölümünden de ulaşabilirsiniz.'
+        : '';
+      mailerSend(
+        d.user_email,
+        'Bağışınız Onaylandı — Makbuzunuz Ekte',
+        `<p>Sayın ${d.user_name},</p><p><strong>${d.amount} TL</strong> tutarındaki bağışınız onaylanmıştır. PDF makbuzunuz bu e-postaya eklenmiştir.${profileNote}</p><p>Hayır ve dualarınız için teşekkür ederiz.</p><p>Hayır Limanı Yardım Derneği</p>`,
+        { filename: receiptName, buffer: pdfBuffer }
+      );
     }
     if (d.campaign_id) {
       db.prepare('UPDATE campaigns SET raised=raised+?, donor_count=donor_count+1 WHERE id=?').run(d.amount, d.campaign_id);
