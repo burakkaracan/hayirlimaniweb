@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog — Hayır Limanı Derneği</title>
+  <meta name="description" content="Hayır Limanı Derneği'nden haberler, yazılar ve duyurular.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/images/icon.png">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .blog-hero { background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%); padding: 56px 0 40px; color: #fff; }
+    .blog-hero h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 8px; }
+    .blog-hero p { font-size: 1rem; opacity: .82; margin: 0; }
+
+    .blog-cat-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 24px 0 8px; }
+    .blog-cat-btn {
+      padding: 7px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600;
+      border: 1.5px solid var(--border); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s;
+    }
+    .blog-cat-btn:hover, .blog-cat-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    .blog-search-wrap { margin-left: auto; }
+    .blog-search-wrap input {
+      padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-size: .88rem; color: var(--text); background: #fff; width: 220px;
+    }
+    .blog-search-wrap input:focus { border-color: var(--brand); outline: none; }
+
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px; padding: 32px 0 56px;
+    }
+
+    .blog-card {
+      background: #fff; border-radius: 14px; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.07); transition: transform .18s, box-shadow .18s;
+      display: flex; flex-direction: column; text-decoration: none;
+    }
+    .blog-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,.12); }
+    .blog-card-cover {
+      width: 100%; height: 200px; object-fit: cover; display: block; background: var(--bg);
+    }
+    .blog-card-cover-placeholder {
+      width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); font-size: 2.8rem;
+    }
+    .blog-card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .blog-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .blog-card-cat {
+      padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 600;
+      background: #e0f2fe; color: #0369a1; text-transform: uppercase; letter-spacing: .04em;
+    }
+    .blog-card-date { font-size: .75rem; color: var(--muted); margin-left: auto; }
+    .blog-card-title { font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.4; margin: 0; }
+    .blog-card-excerpt { font-size: .88rem; color: var(--muted); line-height: 1.6; flex: 1; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .blog-card-footer { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: .8rem; color: var(--muted); }
+    .blog-card-author { font-weight: 500; color: var(--text); }
+    .blog-card-readmore { margin-left: auto; color: var(--brand); font-weight: 600; font-size: .82rem; }
+
+    .blog-featured-badge {
+      position: absolute; top: 12px; right: 12px;
+      background: #fbbf24; color: #fff; padding: 3px 10px;
+      border-radius: 999px; font-size: .72rem; font-weight: 700;
+    }
+    .blog-card-wrap { position: relative; }
+
+    .blog-empty { text-align: center; padding: 80px 20px; color: var(--muted); grid-column: 1/-1; }
+    .blog-empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .blog-empty h3 { font-size: 1.25rem; margin-bottom: 8px; }
+
+    .blog-pagination { display: flex; justify-content: center; gap: 8px; padding-bottom: 48px; }
+    .blog-page-btn { padding: 8px 16px; border-radius: 8px; font-size: .88rem; font-weight: 600; border: 1.5px solid var(--border); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s; }
+    .blog-page-btn:hover, .blog-page-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .blog-page-btn:disabled { opacity: .4; cursor: default; }
+
+    @media (max-width: 600px) {
+      .blog-hero h1 { font-size: 1.6rem; }
+      .blog-grid { grid-template-columns: 1fr; gap: 16px; }
+      .blog-cat-bar { gap: 6px; }
+      .blog-search-wrap input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header id="site-header"></header>
+
+  <section class="blog-hero">
+    <div class="container">
+      <h1>📝 Blog</h1>
+      <p>Haberler, duyurular ve dünyadaki iyilik hikayeleri</p>
+    </div>
+  </section>
+
+  <div class="container">
+    <div id="blog-filter-row" style="display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+      <div class="blog-cat-bar" id="blog-cat-bar">
+        <button class="blog-cat-btn active" data-cat="">Tümü</button>
+      </div>
+      <div class="blog-search-wrap">
+        <input type="search" id="blog-search" placeholder="Yazı ara…" oninput="debouncedSearch()" />
+      </div>
+    </div>
+
+    <div class="blog-grid" id="blog-grid">
+      <div class="blog-empty"><div class="blog-empty-icon">⏳</div><h3>Yükleniyor…</h3></div>
+    </div>
+
+    <div class="blog-pagination" id="blog-pagination"></div>
+  </div>
+
+  <div id="pre-footer-cta"></div>
+  <footer id="site-footer" class="footer"></footer>
+  <script src="/js/main.js"></script>
+  <script>
+    const PER_PAGE = 9;
+    let _allPosts = [];
+    let _activeCat = '';
+    let _search = '';
+    let _page = 1;
+    let _searchTimer = null;
+
+    function debouncedSearch() {
+      clearTimeout(_searchTimer);
+      _searchTimer = setTimeout(() => {
+        _search = document.getElementById('blog-search').value.trim();
+        _page = 1;
+        renderBlog();
+      }, 300);
+    }
+
+    function setCat(cat, btn) {
+      document.querySelectorAll('.blog-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _activeCat = cat;
+      _page = 1;
+      renderBlog();
+    }
+
+    function filteredPosts() {
+      let posts = _allPosts;
+      if (_activeCat) posts = posts.filter(p => p.category === _activeCat);
+      if (_search) {
+        const q = _search.toLowerCase();
+        posts = posts.filter(p =>
+          (p.title || '').toLowerCase().includes(q) ||
+          (p.excerpt || '').toLowerCase().includes(q) ||
+          (p.tags || '').toLowerCase().includes(q)
+        );
+      }
+      return posts;
+    }
+
+    function renderBlog() {
+      const posts = filteredPosts();
+      const total = posts.length;
+      const pages = Math.ceil(total / PER_PAGE);
+      if (_page > pages) _page = Math.max(1, pages);
+      const slice = posts.slice((_page - 1) * PER_PAGE, _page * PER_PAGE);
+      const grid = document.getElementById('blog-grid');
+
+      if (!slice.length) {
+        grid.innerHTML = `<div class="blog-empty"><div class="blog-empty-icon">🔍</div><h3>${_search ? 'Aramanızla eşleşen yazı bulunamadı.' : 'Henüz blog yazısı yok.'}</h3></div>`;
+        document.getElementById('blog-pagination').innerHTML = '';
+        return;
+      }
+
+      grid.innerHTML = slice.map(p => {
+        const date = p.published_at
+          ? new Date(p.published_at).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' })
+          : '';
+        const excerpt = p.excerpt || stripHtml(p.body || '').slice(0, 160);
+        const cover = p.cover_image
+          ? `<img class="blog-card-cover" src="${escapeHtml(p.cover_image)}" alt="${escapeHtml(p.title)}" loading="lazy" />`
+          : `<div class="blog-card-cover-placeholder">📰</div>`;
+        return `
+          <div class="blog-card-wrap">
+            ${p.featured ? '<span class="blog-featured-badge">⭐ Öne Çıkan</span>' : ''}
+            <a class="blog-card" href="/blog-yazi.html?slug=${encodeURIComponent(p.slug)}">
+              ${cover}
+              <div class="blog-card-body">
+                <div class="blog-card-meta">
+                  ${p.category ? `<span class="blog-card-cat">${escapeHtml(p.category)}</span>` : ''}
+                  ${date ? `<span class="blog-card-date">${date}</span>` : ''}
+                </div>
+                <h2 class="blog-card-title">${escapeHtml(p.title)}</h2>
+                ${excerpt ? `<p class="blog-card-excerpt">${escapeHtml(excerpt)}</p>` : ''}
+                <div class="blog-card-footer">
+                  ${p.author ? `<span class="blog-card-author">✍️ ${escapeHtml(p.author)}</span>` : ''}
+                  <span class="blog-card-readmore">Devam Oku →</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        `;
+      }).join('');
+
+      // Pagination
+      const pag = document.getElementById('blog-pagination');
+      if (pages <= 1) { pag.innerHTML = ''; return; }
+      let html = `<button class="blog-page-btn" onclick="goPage(${_page - 1})" ${_page === 1 ? 'disabled' : ''}>‹ Önceki</button>`;
+      for (let i = 1; i <= pages; i++) {
+        html += `<button class="blog-page-btn${i === _page ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="blog-page-btn" onclick="goPage(${_page + 1})" ${_page === pages ? 'disabled' : ''}>Sonraki ›</button>`;
+      pag.innerHTML = html;
+    }
+
+    function goPage(p) {
+      _page = p;
+      renderBlog();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function stripHtml(html) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent || '';
+    }
+
+    window.addEventListener('app-ready', async () => {
+      _allPosts = await api('/api/blog');
+      if (!Array.isArray(_allPosts)) _allPosts = [];
+
+      const cats = [...new Set(_allPosts.map(p => p.category).filter(Boolean))];
+      const bar = document.getElementById('blog-cat-bar');
+      cats.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'blog-cat-btn';
+        btn.dataset.cat = c;
+        btn.textContent = c;
+        btn.onclick = () => setCat(c, btn);
+        bar.appendChild(btn);
+      });
+      bar.querySelector('[data-cat=""]').onclick = function() { setCat('', this); };
+
+      renderBlog();
+    });
+  </script>
+</body>
+</html>

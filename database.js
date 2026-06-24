@@ -224,6 +224,25 @@ try { db.exec(`CREATE TABLE IF NOT EXISTS msg_threads (
   label_id INTEGER,
   archived INTEGER DEFAULT 0
 )`); } catch {}
+try { db.exec(`CREATE TABLE IF NOT EXISTS blog_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT UNIQUE,
+  title TEXT NOT NULL,
+  body TEXT DEFAULT '',
+  excerpt TEXT DEFAULT '',
+  cover_image TEXT DEFAULT '',
+  author TEXT DEFAULT '',
+  category TEXT DEFAULT '',
+  tags TEXT DEFAULT '',
+  status TEXT DEFAULT 'draft',
+  featured INTEGER DEFAULT 0,
+  seo_title TEXT DEFAULT '',
+  seo_description TEXT DEFAULT '',
+  published_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`); } catch {}
+
 ['Bağışçı:#2e7d32','Genel:#1565c0','Teknik:#e65100','Acil:#c41230'].forEach(s => {
   const [name, color] = s.split(':');
   try { db.prepare('INSERT OR IGNORE INTO msg_labels(name,color) VALUES(?,?)').run(name, color); } catch {}

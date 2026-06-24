@@ -8,7 +8,10 @@
       "Bash(git fetch *)",
       "Bash(git checkout *)",
       "Bash(git pull *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(claude *)",
+      "Bash(npm show *)",
+      "Bash(npm install *)"
     ]
   }
 }

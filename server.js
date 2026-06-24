@@ -927,6 +927,77 @@ app.delete('/api/admin/projects/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- Blog (public) ----------
+app.get('/api/blog', (req, res) => {
+  const { category, search, featured } = req.query;
+  let sql = "SELECT id,slug,title,excerpt,cover_image,author,category,tags,featured,published_at,created_at FROM blog_posts WHERE status='published'";
+  const params = [];
+  if (category) { sql += ' AND category=?'; params.push(category); }
+  if (featured === '1') { sql += ' AND featured=1'; }
+  if (search) {
+    sql += ' AND (lower(title) LIKE ? OR lower(excerpt) LIKE ?)';
+    params.push(`%${search.toLowerCase()}%`, `%${search.toLowerCase()}%`);
+  }
+  sql += ' ORDER BY COALESCE(published_at, created_at) DESC';
+  res.json(db.prepare(sql).all(...params));
+});
+
+app.get('/api/blog/:slug', (req, res) => {
+  const post = db.prepare("SELECT * FROM blog_posts WHERE slug=? AND status='published'").get(req.params.slug);
+  if (!post) return res.status(404).json({ error: 'Bulunamadı' });
+  res.json(post);
+});
+
+// ---------- Blog (admin) ----------
+app.get('/api/admin/blog', requireAdmin, (_req, res) => {
+  res.json(db.prepare('SELECT id,slug,title,excerpt,cover_image,author,category,tags,status,featured,published_at,created_at FROM blog_posts ORDER BY created_at DESC').all());
+});
+
+app.get('/api/admin/blog/:id', requireAdmin, (req, res) => {
+  const post = db.prepare('SELECT * FROM blog_posts WHERE id=?').get(req.params.id);
+  if (!post) return res.status(404).json({ error: 'Bulunamadı' });
+  res.json(post);
+});
+
+app.post('/api/admin/blog', requireAdmin, (req, res) => {
+  const { slug, title, body, excerpt, cover_image, author, category, tags, status, featured, seo_title, seo_description, published_at } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: 'Başlık zorunlu' });
+  let finalSlug = (slug || '').trim() || title.trim().toLowerCase()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  try {
+    const info = db.prepare(`INSERT INTO blog_posts(slug,title,body,excerpt,cover_image,author,category,tags,status,featured,seo_title,seo_description,published_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(finalSlug, title.trim(), body||'', excerpt||'', cover_image||'', author||'', category||'', tags||'', status||'draft', featured?1:0, seo_title||'', seo_description||'', published_at||null);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  } catch(e) {
+    if (e.message.includes('UNIQUE')) return res.status(400).json({ error: 'Bu slug zaten kullanılıyor, farklı bir başlık/slug deneyin' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/admin/blog/:id', requireAdmin, (req, res) => {
+  const id = req.params.id;
+  const { slug, title, body, excerpt, cover_image, author, category, tags, status, featured, seo_title, seo_description, published_at } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: 'Başlık zorunlu' });
+  let finalSlug = (slug || '').trim() || title.trim().toLowerCase()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  try {
+    db.prepare(`UPDATE blog_posts SET slug=?,title=?,body=?,excerpt=?,cover_image=?,author=?,category=?,tags=?,status=?,featured=?,seo_title=?,seo_description=?,published_at=?,updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+      .run(finalSlug, title.trim(), body||'', excerpt||'', cover_image||'', author||'', category||'', tags||'', status||'draft', featured?1:0, seo_title||'', seo_description||'', published_at||null, id);
+    res.json({ ok: true });
+  } catch(e) {
+    if (e.message.includes('UNIQUE')) return res.status(400).json({ error: 'Bu slug zaten kullanılıyor' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/admin/blog/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM blog_posts WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ---------- Fallback ----------
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();

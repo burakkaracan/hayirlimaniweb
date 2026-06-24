@@ -41,13 +41,14 @@ const NAV_ICONS = {
   settings:   _si('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
   external:   _si('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
   projects:   _si('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
+  blog:       _si('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>'),
 };
 
 function renderShell() {
   const NAV_LABELS = {
     dashboard:'Panel', donations:'Bağış Onayları', users:'Bağışçılar',
     messages:'Mesajlar', categories:'Bağış Kategorileri', campaigns:'Kampanyalar',
-    activities:'Faaliyetler', files:'Dosya Yöneticisi', hero:'Hero Slider',
+    activities:'Faaliyetler', blog:'Blog Yazıları', files:'Dosya Yöneticisi', hero:'Hero Slider',
     boards:'Yetkili Kurullar', documents:'Belgeler', menus:'Menü Yönetimi',
     bulk:'Toplu Mail', settings:'Site Ayarları'
   };
@@ -75,6 +76,7 @@ function renderShell() {
           <a href="#categories" data-s="categories" onclick="closeAdminNav()">${NAV_ICONS.categories} Bağış Kategorileri</a>
           <a href="#campaigns"  data-s="campaigns"  onclick="closeAdminNav()">${NAV_ICONS.campaigns} Kampanyalar</a>
           <a href="#activities" data-s="activities" onclick="closeAdminNav()">${NAV_ICONS.activities} Faaliyetler</a>
+          <a href="#blog"       data-s="blog"       onclick="closeAdminNav()">${NAV_ICONS.blog} Blog</a>
           <a href="#files"      data-s="files"      onclick="closeAdminNav()">${NAV_ICONS.files} Dosya Yöneticisi</a>
           <a href="#hero"       data-s="hero"       onclick="closeAdminNav()">${NAV_ICONS.hero} Hero Slider</a>
           <a href="#boards"     data-s="boards"     onclick="closeAdminNav()">${NAV_ICONS.boards} Yetkili Kurullar</a>
@@ -732,6 +734,45 @@ const sections = {
         <div class="form-group"><label>Konu</label><input type="text" id="subject" /></div>
         <div class="form-group"><label>İçerik (HTML destekler)</label><textarea id="html" rows="8" placeholder="Merhaba {name}, ..."></textarea></div>
         <button class="btn btn-primary" onclick="sendBulk()">Gönder</button>
+      </div>
+    `;
+  },
+
+  async blog() {
+    const rows = await api('/api/admin/blog');
+    document.getElementById('admin-main').innerHTML = `
+      <div class="admin-head">
+        <h2>Blog Yazıları</h2>
+        <button class="btn btn-primary" onclick="openBlogEditor(null)">+ Yeni Yazı</button>
+      </div>
+      <div class="admin-section">
+        ${rows.length === 0 ? '<div class="empty">Henüz blog yazısı yok. İlk yazınızı ekleyin!</div>' : `
+          <div class="table-wrap"><table>
+            <thead><tr><th>Başlık</th><th>Kategori</th><th>Yazar</th><th>Durum</th><th>Tarih</th><th>İşlem</th></tr></thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td>
+                    <strong>${escapeHtml(r.title)}</strong>
+                    ${r.featured ? '<span style="background:#fce7f3;color:#be185d;padding:1px 7px;border-radius:999px;font-size:.72rem;font-weight:600;margin-left:6px">⭐ Öne Çıkan</span>' : ''}
+                    <div class="muted" style="font-size:.78rem">/blog/${escapeHtml(r.slug||'')}</div>
+                  </td>
+                  <td>${r.category ? `<span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:999px;font-size:.78rem">${escapeHtml(r.category)}</span>` : '<span class="muted">—</span>'}</td>
+                  <td>${escapeHtml(r.author||'—')}</td>
+                  <td>
+                    <span style="background:${r.status==='published'?'#dcfce7':'#fef3c7'};color:${r.status==='published'?'#16a34a':'#92400e'};padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600">
+                      ${r.status === 'published' ? '🟢 Yayında' : '📝 Taslak'}
+                    </span>
+                  </td>
+                  <td>${r.published_at ? new Date(r.published_at).toLocaleDateString('tr-TR') : new Date(r.created_at).toLocaleDateString('tr-TR')}</td>
+                  <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+                    <button class="btn btn-outline btn-sm" onclick="openBlogEditor(${r.id})">Düzenle</button>
+                    <a href="/blog-yazi.html?slug=${encodeURIComponent(r.slug)}" target="_blank" class="btn btn-ghost btn-sm">Görüntüle</a>
+                    <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteBlogPost(${r.id},'${escapeHtml(r.title).replace(/'/g,"\\'")}')">Sil</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table></div>`}
       </div>
     `;
   },
@@ -1706,6 +1747,409 @@ async function sendBulk() {
   if (!payload.subject || !payload.html) return alert('Konu ve içerik zorunlu');
   const r = await api('/api/admin/bulk-mail', { method: 'POST', body: payload });
   alert(`${r.count} adrese gönderildi.`);
+}
+
+// ===== Blog Editor =====
+let _blogQuill = null;
+let _blogPostId = null;
+
+async function loadQuill() {
+  if (window.Quill) return;
+  await new Promise(resolve => {
+    if (!document.getElementById('quill-css')) {
+      const link = document.createElement('link');
+      link.id = 'quill-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://cdn.quilljs.com/1.3.7/quill.snow.css';
+      document.head.appendChild(link);
+    }
+    if (document.getElementById('quill-js')) { resolve(); return; }
+    const script = document.createElement('script');
+    script.id = 'quill-js';
+    script.src = 'https://cdn.quilljs.com/1.3.7/quill.min.js';
+    script.onload = resolve;
+    document.head.appendChild(script);
+  });
+}
+
+async function openBlogEditor(id) {
+  let post = {};
+  if (id) {
+    post = await api('/api/admin/blog/' + id);
+    if (post.error) return alert(post.error);
+  }
+  await loadQuill();
+
+  document.getElementById('admin-main').innerHTML = `
+    <div class="blog-editor-wrap">
+      <div class="blog-editor-topbar">
+        <button class="btn btn-ghost btn-sm" onclick="switchSection('blog')">← Blog Yazıları</button>
+        <span class="blog-editor-topbar-title">${id ? 'Yazıyı Düzenle' : 'Yeni Blog Yazısı'}</span>
+        <div class="blog-editor-actions">
+          <span id="blog-save-status" class="blog-save-status"></span>
+          <button class="btn btn-outline" onclick="saveBlogPost('draft',${id||'null'})">Taslak Kaydet</button>
+          <button class="btn btn-primary" onclick="saveBlogPost('published',${id||'null'})">🚀 Yayımla</button>
+        </div>
+      </div>
+      <div class="blog-editor-body">
+        <div class="blog-editor-main">
+          <textarea id="blog-title" class="blog-title-textarea" rows="1"
+            placeholder="Yazı başlığını buraya yazın…"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';blogAutoSlug()">${escapeHtml(post.title||'')}</textarea>
+          <div class="blog-slug-row">
+            <span>Kalıcı bağlantı: <strong>/blog/</strong></span>
+            <input type="text" id="blog-slug" class="blog-slug-input"
+              value="${escapeHtml(post.slug||'')}" placeholder="yazi-basligi"
+              onblur="this.dataset.edited='1'" />
+            ${id ? `<a href="/blog-yazi.html?slug=${escapeHtml(post.slug||'')}" target="_blank" style="font-size:.78rem;margin-left:8px;color:var(--brand)">↗ Önizle</a>` : ''}
+          </div>
+          <div id="quill-container">
+            <div id="quill-toolbar">
+              <span class="ql-formats">
+                <select class="ql-header">
+                  <option selected>Normal</option>
+                  <option value="1">Başlık 1</option>
+                  <option value="2">Başlık 2</option>
+                  <option value="3">Başlık 3</option>
+                  <option value="4">Başlık 4</option>
+                </select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-bold"></button>
+                <button class="ql-italic"></button>
+                <button class="ql-underline"></button>
+                <button class="ql-strike"></button>
+              </span>
+              <span class="ql-formats">
+                <select class="ql-color"></select>
+                <select class="ql-background"></select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-list" value="ordered"></button>
+                <button class="ql-list" value="bullet"></button>
+                <button class="ql-indent" value="-1"></button>
+                <button class="ql-indent" value="+1"></button>
+              </span>
+              <span class="ql-formats">
+                <select class="ql-align"></select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-blockquote"></button>
+                <button class="ql-code-block"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-link"></button>
+                <button class="ql-image"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-clean"></button>
+              </span>
+            </div>
+            <div id="quill-editor"></div>
+          </div>
+        </div>
+
+        <aside class="blog-editor-sidebar">
+          <!-- Yayımlama -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>📢 Yayımlama</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>Durum</label>
+                <select id="blog-status">
+                  <option value="draft" ${(post.status||'draft')==='draft'?'selected':''}>📝 Taslak</option>
+                  <option value="published" ${post.status==='published'?'selected':''}>🟢 Yayında</option>
+                </select>
+              </div>
+              <div class="bsb-field">
+                <label>Yayım Tarihi</label>
+                <input type="datetime-local" id="blog-published-at"
+                  value="${post.published_at ? new Date(post.published_at).toISOString().slice(0,16) : ''}" />
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;padding:4px 0">
+                <input type="checkbox" id="blog-featured" ${post.featured?'checked':''} />
+                ⭐ Öne Çıkan Yazı
+              </label>
+            </div>
+          </div>
+
+          <!-- Kapak Görseli -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>🖼 Kapak Görseli</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div id="blog-cover-preview" class="blog-cover-preview">
+                ${post.cover_image
+                  ? `<img src="${escapeHtml(post.cover_image)}" />`
+                  : '<span>Görsel seçilmedi</span>'}
+              </div>
+              <div class="bsb-field">
+                <label>URL</label>
+                <input type="text" id="blog-cover-image"
+                  placeholder="https://… veya aşağıdan yükleyin"
+                  value="${escapeHtml(post.cover_image||'')}"
+                  oninput="blogUpdateCoverPreview()" />
+              </div>
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;display:block;text-align:center;width:100%;box-sizing:border-box">
+                📁 Görsel Yükle
+                <input type="file" accept="image/*" style="display:none" onchange="blogUploadCover(this)" />
+              </label>
+              ${post.cover_image ? `<button class="btn btn-ghost btn-sm" style="display:block;width:100%;margin-top:6px;color:var(--danger)" onclick="blogRemoveCover()">✕ Görseli Kaldır</button>` : ''}
+            </div>
+          </div>
+
+          <!-- Kategori -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>🏷 Kategori</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>Kategori Adı</label>
+                <input type="text" id="blog-category"
+                  placeholder="Örn: Haberler, Etkinlikler"
+                  value="${escapeHtml(post.category||'')}" />
+              </div>
+              <div id="blog-cat-suggestions" class="blog-cat-pills"></div>
+            </div>
+          </div>
+
+          <!-- Etiketler -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>🔖 Etiketler</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>Etiketler (virgülle ayırın)</label>
+                <input type="text" id="blog-tags"
+                  placeholder="yardım, bağış, etkinlik"
+                  value="${escapeHtml(post.tags||'')}" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Özet -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>📋 Özet</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>Kısa Özet</label>
+                <textarea id="blog-excerpt" rows="4"
+                  placeholder="Boş bırakılırsa içerikten otomatik alınır…">${escapeHtml(post.excerpt||'')}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Yazar -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>✍️ Yazar</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>Yazar Adı</label>
+                <input type="text" id="blog-author"
+                  placeholder="Yazar adı"
+                  value="${escapeHtml(post.author||currentUser?.name||'')}" />
+              </div>
+            </div>
+          </div>
+
+          <!-- SEO -->
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)">
+              <h4>🔍 SEO Ayarları</h4><span class="bs-arrow">▾</span>
+            </div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field">
+                <label>SEO Başlık <span style="font-weight:400">(boş=yazı başlığı)</span></label>
+                <input type="text" id="blog-seo-title"
+                  placeholder="Sayfa sekmesi başlığı…"
+                  value="${escapeHtml(post.seo_title||'')}" />
+              </div>
+              <div class="bsb-field">
+                <label>Meta Açıklama</label>
+                <textarea id="blog-seo-description" rows="3"
+                  placeholder="Arama motoru önizleme metni (max 160 karakter)"
+                  oninput="document.getElementById('blog-seo-chars').textContent=this.value.length+'/160'">${escapeHtml(post.seo_description||'')}</textarea>
+                <small id="blog-seo-chars" class="muted" style="font-size:.75rem">${(post.seo_description||'').length}/160</small>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  `;
+
+  _blogQuill = new Quill('#quill-editor', {
+    modules: {
+      toolbar: { container: '#quill-toolbar', handlers: { image: blogInsertImage } }
+    },
+    theme: 'snow',
+    placeholder: 'Yazınızı buraya yazın…'
+  });
+  _blogPostId = id;
+
+  if (post.body) _blogQuill.root.innerHTML = post.body;
+
+  const ta = document.getElementById('blog-title');
+  if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+
+  blogLoadCatSuggestions();
+}
+
+async function saveBlogPost(statusOverride, id) {
+  const titleEl = document.getElementById('blog-title');
+  const title = titleEl?.value?.trim();
+  if (!title) { titleEl?.focus(); return alert('Başlık zorunludur.'); }
+
+  let slug = document.getElementById('blog-slug')?.value?.trim();
+  if (!slug) slug = blogSlugify(title);
+
+  const body = _blogQuill ? _blogQuill.root.innerHTML : '';
+  const status = statusOverride || document.getElementById('blog-status')?.value || 'draft';
+  const publishedAt = document.getElementById('blog-published-at')?.value || null;
+
+  const data = {
+    title, slug, body,
+    excerpt: document.getElementById('blog-excerpt')?.value?.trim() || '',
+    cover_image: document.getElementById('blog-cover-image')?.value?.trim() || '',
+    author: document.getElementById('blog-author')?.value?.trim() || '',
+    category: document.getElementById('blog-category')?.value?.trim() || '',
+    tags: document.getElementById('blog-tags')?.value?.trim() || '',
+    status,
+    featured: document.getElementById('blog-featured')?.checked ? 1 : 0,
+    seo_title: document.getElementById('blog-seo-title')?.value?.trim() || '',
+    seo_description: document.getElementById('blog-seo-description')?.value?.trim() || '',
+    published_at: status === 'published' ? (publishedAt || new Date().toISOString()) : publishedAt,
+  };
+
+  const url = id ? `/api/admin/blog/${id}` : '/api/admin/blog';
+  const r = await api(url, { method: id ? 'PUT' : 'POST', body: data });
+
+  const statusEl = document.getElementById('blog-save-status');
+  if (r.ok) {
+    if (statusEl) {
+      statusEl.textContent = status === 'published' ? '✅ Yayımlandı' : '✅ Taslak kaydedildi';
+      statusEl.className = 'blog-save-status ok';
+      setTimeout(() => { if (statusEl) { statusEl.textContent = ''; statusEl.className = 'blog-save-status'; } }, 3000);
+    }
+    if (!id && r.id) {
+      _blogPostId = r.id;
+      document.querySelectorAll('.blog-editor-topbar button').forEach(btn => {
+        const oc = btn.getAttribute('onclick') || '';
+        if (oc.includes('saveBlogPost'))
+          btn.setAttribute('onclick', oc.replace(/saveBlogPost\(('[\w]+'),(null|\d+)\)/, `saveBlogPost($1,${r.id})`));
+      });
+      if (document.getElementById('blog-slug')) {
+        const previewLink = document.querySelector('.blog-slug-row a');
+        if (!previewLink) {
+          document.querySelector('.blog-slug-row').insertAdjacentHTML('beforeend',
+            `<a href="/blog-yazi.html?slug=${encodeURIComponent(slug)}" target="_blank" style="font-size:.78rem;margin-left:8px;color:var(--brand)">↗ Önizle</a>`);
+        }
+      }
+    }
+    if (status === 'published') {
+      const statusSel = document.getElementById('blog-status');
+      if (statusSel) statusSel.value = 'published';
+    }
+  } else {
+    if (statusEl) {
+      statusEl.textContent = '❌ ' + (r.error || 'Kaydetme başarısız');
+      statusEl.className = 'blog-save-status err';
+    } else {
+      alert(r.error || 'Kaydetme başarısız');
+    }
+  }
+}
+
+function blogSlugify(str) {
+  return (str||'').toLowerCase()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s')
+    .replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+}
+
+function blogAutoSlug() {
+  const slugEl = document.getElementById('blog-slug');
+  if (!slugEl || slugEl.dataset.edited === '1') return;
+  slugEl.value = blogSlugify(document.getElementById('blog-title')?.value || '');
+}
+
+function blogInsertImage() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.click();
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }).then(res => res.json());
+      if (r.url && _blogQuill) {
+        const range = _blogQuill.getSelection(true);
+        _blogQuill.insertEmbed(range ? range.index : 0, 'image', r.url);
+        if (range) _blogQuill.setSelection(range.index + 1);
+      }
+    } catch { alert('Görsel yüklenemedi.'); }
+  };
+}
+
+function blogUpdateCoverPreview() {
+  const url = document.getElementById('blog-cover-image')?.value?.trim();
+  const preview = document.getElementById('blog-cover-preview');
+  if (!preview) return;
+  preview.innerHTML = url
+    ? `<img src="${escapeHtml(url)}" onerror="this.style.display='none'" />`
+    : '<span>Görsel seçilmedi</span>';
+}
+
+async function blogUploadCover(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }).then(res => res.json());
+  if (r.url) {
+    const inp = document.getElementById('blog-cover-image');
+    if (inp) { inp.value = r.url; blogUpdateCoverPreview(); }
+  }
+}
+
+function blogRemoveCover() {
+  const inp = document.getElementById('blog-cover-image');
+  if (inp) inp.value = '';
+  blogUpdateCoverPreview();
+}
+
+function bsToggle(head) {
+  const body = head.nextElementSibling;
+  const arrow = head.querySelector('.bs-arrow');
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (arrow) arrow.textContent = collapsed ? '▾' : '▸';
+}
+
+async function blogLoadCatSuggestions() {
+  const rows = await api('/api/admin/blog');
+  const cats = [...new Set(rows.map(r => r.category).filter(Boolean))];
+  const container = document.getElementById('blog-cat-suggestions');
+  if (!container || !cats.length) return;
+  container.innerHTML = cats.map(c =>
+    `<button type="button" class="blog-cat-pill"
+      onclick="document.getElementById('blog-category').value='${escapeHtml(c)}'">${escapeHtml(c)}</button>`
+  ).join('');
+}
+
+async function deleteBlogPost(id, title) {
+  if (!confirm(`"${title}" yazısını silmek istediğinize emin misiniz?\nBu işlem geri alınamaz.`)) return;
+  const r = await api(`/api/admin/blog/${id}`, { method: 'DELETE' });
+  if (r.ok) switchSection('blog');
+  else alert(r.error || 'Silme başarısız');
 }
 
 // Settings
