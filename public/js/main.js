@@ -92,9 +92,9 @@ function renderHeader() {
               <a href="/belgelerimiz.html">Belgelerimiz</a>
             </div>
           </div>
-          <a href="/faaliyetler.html">Faaliyetler</a>
+          <a href="/faaliyetler.html">Projelerimiz</a>
           <a href="/blog.html">Blog</a>
-          <a href="/galeri.html">Galeri</a>
+          <a href="/galeri.html">Faaliyetlerimiz</a>
           <a href="/iletisim.html">İletişim</a>
           <a href="/bagis-yap.html" class="btn btn-accent nav-donate-mobile">${svgIcon('heart')} Bağış Yap</a>
         </nav>
@@ -301,7 +301,7 @@ function renderFooter() {
         <div>
           <h4>Bağış</h4>
           <a href="/bagis-yap.html">Bağış Yap</a>
-          <a href="/faaliyetler.html">Faaliyetlerimiz</a>
+          <a href="/faaliyetler.html">Projelerimiz</a>
           <a href="/bagis-yap.html?kat=kurban">Kurban</a>
           <a href="/bagis-yap.html?kat=su-kuyusu">Su Kuyusu</a>
         </div>

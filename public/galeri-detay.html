@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">Galeri — Hayır Limanı Derneği</title>
+  <title id="page-title">Faaliyetlerimiz — Hayır Limanı Derneği</title>
   <meta name="description" id="page-desc" content="">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="/images/icon.png">
@@ -200,7 +200,7 @@
       const album = await api('/api/gallery/' + encodeURIComponent(slug));
       if (!album || album.error) { renderNotFound(); return; }
 
-      document.getElementById('page-title').textContent = album.title + ' — Galeri | Hayır Limanı Derneği';
+      document.getElementById('page-title').textContent = album.title + ' — Faaliyetlerimiz | Hayır Limanı Derneği';
       document.getElementById('page-desc').content = stripHtml(album.description || '').slice(0, 160);
 
       if (album.cover_image) {
@@ -239,7 +239,7 @@
 
       document.getElementById('album-content').innerHTML = `
         <nav class="album-breadcrumb">
-          <a href="/">Anasayfa</a> / <a href="/galeri.html">Galeri</a> / ${escapeHtml(album.title)}
+          <a href="/">Anasayfa</a> / <a href="/galeri.html">Faaliyetlerimiz</a> / ${escapeHtml(album.title)}
         </nav>
 
         <div class="album-header">
@@ -276,8 +276,8 @@
             <polyline points="21 15 16 10 5 21"/>
           </svg>
           <h2>Albüm bulunamadı</h2>
-          <p style="color:var(--muted);margin-bottom:24px">Bu galeri albümü yayından kaldırılmış veya mevcut değil.</p>
-          <a href="/galeri.html" class="btn btn-primary">← Galeriye Dön</a>
+          <p style="color:var(--muted);margin-bottom:24px">Bu faaliyet albümü yayından kaldırılmış veya mevcut değil.</p>
+          <a href="/galeri.html" class="btn btn-primary">← Faaliyetlerimize Dön</a>
         </div>
       `;
     }

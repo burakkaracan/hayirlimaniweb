@@ -49,7 +49,7 @@ function renderShell() {
   const NAV_LABELS = {
     dashboard:'Panel', donations:'Bağış Onayları', users:'Bağışçılar',
     messages:'Mesajlar', categories:'Bağış Kategorileri', campaigns:'Kampanyalar',
-    activities:'Faaliyetler', blog:'Blog Yazıları', gallery:'Galeri', files:'Dosya Yöneticisi', hero:'Hero Slider',
+    activities:'Projelerimiz', blog:'Blog Yazıları', gallery:'Faaliyetlerimiz', files:'Dosya Yöneticisi', hero:'Hero Slider',
     boards:'Yetkili Kurullar', documents:'Belgeler', menus:'Menü Yönetimi',
     bulk:'Toplu Mail', settings:'Site Ayarları'
   };
@@ -76,9 +76,9 @@ function renderShell() {
           <a href="#messages"   data-s="messages"   onclick="closeAdminNav()">${NAV_ICONS.messages} Mesajlar <span class="admin-msg-badge" id="admin-msg-badge" style="display:none"></span></a>
           <a href="#categories" data-s="categories" onclick="closeAdminNav()">${NAV_ICONS.categories} Bağış Kategorileri</a>
           <a href="#campaigns"  data-s="campaigns"  onclick="closeAdminNav()">${NAV_ICONS.campaigns} Kampanyalar</a>
-          <a href="#activities" data-s="activities" onclick="closeAdminNav()">${NAV_ICONS.activities} Faaliyetler</a>
+          <a href="#activities" data-s="activities" onclick="closeAdminNav()">${NAV_ICONS.activities} Projelerimiz</a>
           <a href="#blog"       data-s="blog"       onclick="closeAdminNav()">${NAV_ICONS.blog} Blog</a>
-          <a href="#gallery"    data-s="gallery"    onclick="closeAdminNav()">${NAV_ICONS.gallery} Galeri</a>
+          <a href="#gallery"    data-s="gallery"    onclick="closeAdminNav()">${NAV_ICONS.gallery} Faaliyetlerimiz</a>
           <a href="#files"      data-s="files"      onclick="closeAdminNav()">${NAV_ICONS.files} Dosya Yöneticisi</a>
           <a href="#hero"       data-s="hero"       onclick="closeAdminNav()">${NAV_ICONS.hero} Hero Slider</a>
           <a href="#boards"     data-s="boards"     onclick="closeAdminNav()">${NAV_ICONS.boards} Yetkili Kurullar</a>
@@ -554,7 +554,7 @@ const sections = {
   async activities() {
     window._adminCats = await api('/api/admin/categories');
     await renderCrudSection({
-    key: 'activities', title: 'Faaliyetler',
+    key: 'activities', title: 'Projelerimiz',
     fields: [
       { k: 'title', label: 'Başlık', wide: true },
       { k: 'slug', label: 'Slug' },
@@ -783,11 +783,11 @@ const sections = {
     const rows = await api('/api/admin/gallery');
     document.getElementById('admin-main').innerHTML = `
       <div class="admin-head">
-        <h2>Galeri</h2>
+        <h2>Faaliyetlerimiz</h2>
         <button class="btn btn-primary" onclick="openGalleryEditor(null)">+ Yeni Albüm</button>
       </div>
       <div class="admin-section">
-        ${rows.length === 0 ? '<div class="empty">Henüz galeri albümü yok…</div>' : `
+        ${rows.length === 0 ? '<div class="empty">Henüz faaliyet albümü yok…</div>' : `
           <div class="table-wrap"><table>
             <thead><tr>
               <th>Kapak</th><th>Başlık</th><th>Tarih / Konum</th><th>Medya</th><th>Durum</th><th></th>
@@ -2204,7 +2204,7 @@ async function openGalleryEditor(id) {
   document.getElementById('admin-main').innerHTML = `
     <div class="blog-editor-wrap">
       <div class="blog-editor-topbar">
-        <button class="btn btn-ghost btn-sm" onclick="switchSection('gallery')">← Galeri</button>
+        <button class="btn btn-ghost btn-sm" onclick="switchSection('gallery')">← Faaliyetlerimiz</button>
         <span class="blog-editor-topbar-title">${id ? 'Albümü Düzenle' : 'Yeni Albüm'}</span>
         <div class="blog-editor-actions">
           <span id="gal-save-status" class="blog-save-status"></span>
@@ -2218,7 +2218,7 @@ async function openGalleryEditor(id) {
             placeholder="Albüm başlığını buraya yazın…"
             oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';galAutoSlug()">${escapeHtml(album.title||'')}</textarea>
           <div class="blog-slug-row">
-            <span>Kalıcı bağlantı: <strong>/galeri/</strong></span>
+            <span>Kalıcı bağlantı: <strong>/faaliyetlerimiz/</strong></span>
             <input type="text" id="gal-slug" class="blog-slug-input"
               value="${escapeHtml(album.slug||'')}" placeholder="album-basligi"
               onblur="this.dataset.edited='1'" />
