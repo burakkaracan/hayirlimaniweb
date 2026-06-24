@@ -42,13 +42,14 @@ const NAV_ICONS = {
   external:   _si('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
   projects:   _si('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'),
   blog:       _si('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>'),
+  gallery:    _si('<path d="M4 15V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6M2 15h20"/><path d="M12 19l-3-4h6l-3 4z"/><circle cx="8.5" cy="11.5" r="1.5"/>'),
 };
 
 function renderShell() {
   const NAV_LABELS = {
     dashboard:'Panel', donations:'Bağış Onayları', users:'Bağışçılar',
     messages:'Mesajlar', categories:'Bağış Kategorileri', campaigns:'Kampanyalar',
-    activities:'Faaliyetler', blog:'Blog Yazıları', files:'Dosya Yöneticisi', hero:'Hero Slider',
+    activities:'Faaliyetler', blog:'Blog Yazıları', gallery:'Galeri', files:'Dosya Yöneticisi', hero:'Hero Slider',
     boards:'Yetkili Kurullar', documents:'Belgeler', menus:'Menü Yönetimi',
     bulk:'Toplu Mail', settings:'Site Ayarları'
   };
@@ -77,6 +78,7 @@ function renderShell() {
           <a href="#campaigns"  data-s="campaigns"  onclick="closeAdminNav()">${NAV_ICONS.campaigns} Kampanyalar</a>
           <a href="#activities" data-s="activities" onclick="closeAdminNav()">${NAV_ICONS.activities} Faaliyetler</a>
           <a href="#blog"       data-s="blog"       onclick="closeAdminNav()">${NAV_ICONS.blog} Blog</a>
+          <a href="#gallery"    data-s="gallery"    onclick="closeAdminNav()">${NAV_ICONS.gallery} Galeri</a>
           <a href="#files"      data-s="files"      onclick="closeAdminNav()">${NAV_ICONS.files} Dosya Yöneticisi</a>
           <a href="#hero"       data-s="hero"       onclick="closeAdminNav()">${NAV_ICONS.hero} Hero Slider</a>
           <a href="#boards"     data-s="boards"     onclick="closeAdminNav()">${NAV_ICONS.boards} Yetkili Kurullar</a>
@@ -772,6 +774,38 @@ const sections = {
                   </td>
                 </tr>`).join('')}
             </tbody>
+          </table></div>`}
+      </div>
+    `;
+  },
+
+  async gallery() {
+    const rows = await api('/api/admin/gallery');
+    document.getElementById('admin-main').innerHTML = `
+      <div class="admin-head">
+        <h2>Galeri</h2>
+        <button class="btn btn-primary" onclick="openGalleryEditor(null)">+ Yeni Albüm</button>
+      </div>
+      <div class="admin-section">
+        ${rows.length === 0 ? '<div class="empty">Henüz galeri albümü yok…</div>' : `
+          <div class="table-wrap"><table>
+            <thead><tr>
+              <th>Kapak</th><th>Başlık</th><th>Tarih / Konum</th><th>Medya</th><th>Durum</th><th></th>
+            </tr></thead>
+            <tbody>${rows.map(r => `<tr>
+              <td>${r.cover_image ? `<img src="${escapeHtml(r.cover_image)}" style="width:56px;height:40px;object-fit:cover;border-radius:5px">` : '<span style="color:#bbb;font-size:.8rem">—</span>'}</td>
+              <td><strong>${escapeHtml(r.title)}</strong><br><small class="muted">${escapeHtml(r.slug||'')}</small></td>
+              <td><small>${escapeHtml(r.event_date||'')}</small>${r.location ? `<br><small class="muted">${escapeHtml(r.location)}</small>` : ''}</td>
+              <td><span class="badge">${r.media_count} öğe</span></td>
+              <td>${r.status==='published'
+                ? '<span class="badge badge-green">Yayında</span>'
+                : '<span class="badge badge-yellow">Taslak</span>'}</td>
+              <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="openGalleryEditor(${r.id})">Düzenle</button>
+                <a href="/galeri-detay.html?slug=${encodeURIComponent(r.slug)}" target="_blank" class="btn btn-ghost btn-sm">Görüntüle</a>
+                <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="deleteGalleryAlbum(${r.id},'${escapeHtml(r.title).replace(/'/g,"\\'")}')">Sil</button>
+              </td>
+            </tr>`).join('')}</tbody>
           </table></div>`}
       </div>
     `;
@@ -2149,6 +2183,292 @@ async function deleteBlogPost(id, title) {
   if (!confirm(`"${title}" yazısını silmek istediğinize emin misiniz?\nBu işlem geri alınamaz.`)) return;
   const r = await api(`/api/admin/blog/${id}`, { method: 'DELETE' });
   if (r.ok) switchSection('blog');
+  else alert(r.error || 'Silme başarısız');
+}
+
+// ===== Gallery Editor =====
+let _galleryQuill = null;
+let _galleryAlbumId = null;
+let _galleryMedia = [];
+
+async function openGalleryEditor(id) {
+  let album = {};
+  if (id) {
+    album = await api('/api/admin/gallery/' + id);
+    if (album.error) return alert(album.error);
+  }
+  await loadQuill();
+  _galleryAlbumId = id;
+  _galleryMedia = album.media ? [...album.media] : [];
+
+  document.getElementById('admin-main').innerHTML = `
+    <div class="blog-editor-wrap">
+      <div class="blog-editor-topbar">
+        <button class="btn btn-ghost btn-sm" onclick="switchSection('gallery')">← Galeri</button>
+        <span class="blog-editor-topbar-title">${id ? 'Albümü Düzenle' : 'Yeni Albüm'}</span>
+        <div class="blog-editor-actions">
+          <span id="gal-save-status" class="blog-save-status"></span>
+          <button class="btn btn-outline" onclick="saveGalleryAlbum('draft',${id||'null'})">Taslak Kaydet</button>
+          <button class="btn btn-primary" onclick="saveGalleryAlbum('published',${id||'null'})">🚀 Yayımla</button>
+        </div>
+      </div>
+      <div class="blog-editor-body">
+        <div class="blog-editor-main">
+          <textarea id="gal-title" class="blog-title-textarea" rows="1"
+            placeholder="Albüm başlığını buraya yazın…"
+            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';galAutoSlug()">${escapeHtml(album.title||'')}</textarea>
+          <div class="blog-slug-row">
+            <span>Kalıcı bağlantı: <strong>/galeri/</strong></span>
+            <input type="text" id="gal-slug" class="blog-slug-input"
+              value="${escapeHtml(album.slug||'')}" placeholder="album-basligi"
+              onblur="this.dataset.edited='1'" />
+          </div>
+
+          <!-- Zengin metin açıklaması -->
+          <div style="margin-bottom:20px">
+            <label style="display:block;font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Açıklama / İçerik</label>
+            <div id="gal-quill-container" style="border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+              <div id="gal-quill-toolbar">
+                <span class="ql-formats"><select class="ql-header"><option selected>Normal</option><option value="2">Başlık 2</option><option value="3">Başlık 3</option></select></span>
+                <span class="ql-formats"><button class="ql-bold"></button><button class="ql-italic"></button><button class="ql-underline"></button></span>
+                <span class="ql-formats"><button class="ql-list" value="bullet"></button><button class="ql-list" value="ordered"></button></span>
+                <span class="ql-formats"><button class="ql-link"></button><button class="ql-blockquote"></button></span>
+                <span class="ql-formats"><button class="ql-clean"></button></span>
+              </div>
+              <div id="gal-quill-editor" style="min-height:200px;font-size:1rem"></div>
+            </div>
+          </div>
+
+          <!-- Medya yönetimi -->
+          <div style="margin-top:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <label style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Fotoğraf ve Videolar</label>
+              <div style="display:flex;gap:8px">
+                <label class="btn btn-outline btn-sm" style="cursor:pointer">
+                  📁 Fotoğraf Yükle
+                  <input type="file" accept="image/*" multiple style="display:none" onchange="galUploadPhotos(this)" />
+                </label>
+                <button class="btn btn-outline btn-sm" onclick="galAddVideoModal()">🎬 Video Ekle</button>
+              </div>
+            </div>
+            <div id="gal-media-grid" class="gal-media-grid">
+              ${_galleryMedia.length === 0 ? '<div class="gal-media-empty">Henüz medya eklenmedi. Fotoğraf yükleyin veya video URL ekleyin.</div>' : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="blog-editor-sidebar">
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)"><h4>📢 Yayımlama</h4><span class="bs-arrow">▾</span></div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field"><label>Durum</label>
+                <select id="gal-status">
+                  <option value="draft" ${(album.status||'draft')==='draft'?'selected':''}>📝 Taslak</option>
+                  <option value="published" ${album.status==='published'?'selected':''}>🟢 Yayında</option>
+                </select>
+              </div>
+              <div class="bsb-field"><label>Sıralama (büyük = üstte)</label>
+                <input type="number" id="gal-sort" value="${album.sort_order||0}" />
+              </div>
+            </div>
+          </div>
+
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)"><h4>🖼 Kapak Görseli</h4><span class="bs-arrow">▾</span></div>
+            <div class="blog-sidebar-box-body">
+              <div id="gal-cover-preview" class="blog-cover-preview">
+                ${album.cover_image ? `<img src="${escapeHtml(album.cover_image)}" />` : '<span>Görsel seçilmedi</span>'}
+              </div>
+              <div class="bsb-field">
+                <label>URL</label>
+                <input type="text" id="gal-cover-image" value="${escapeHtml(album.cover_image||'')}"
+                  placeholder="https://… veya medyadan seç" oninput="galUpdateCoverPreview()" />
+              </div>
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;display:block;text-align:center;width:100%;box-sizing:border-box">
+                📁 Görsel Yükle
+                <input type="file" accept="image/*" style="display:none" onchange="galUploadCover(this)" />
+              </label>
+            </div>
+          </div>
+
+          <div class="blog-sidebar-box">
+            <div class="blog-sidebar-box-head" onclick="bsToggle(this)"><h4>📅 Etkinlik Bilgisi</h4><span class="bs-arrow">▾</span></div>
+            <div class="blog-sidebar-box-body">
+              <div class="bsb-field"><label>Etkinlik Tarihi</label>
+                <input type="date" id="gal-event-date" value="${escapeHtml(album.event_date||'')}" />
+              </div>
+              <div class="bsb-field"><label>Konum</label>
+                <input type="text" id="gal-location" placeholder="Şehir, Ülke…" value="${escapeHtml(album.location||'')}" />
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  `;
+
+  _galleryQuill = new Quill('#gal-quill-editor', {
+    modules: { toolbar: { container: '#gal-quill-toolbar' } },
+    theme: 'snow',
+    placeholder: 'Etkinlik hakkında bilgi yazın…'
+  });
+  if (album.description) _galleryQuill.root.innerHTML = album.description;
+
+  const ta = document.getElementById('gal-title');
+  if (ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+
+  galRenderMediaGrid();
+}
+
+function galRenderMediaGrid() {
+  const grid = document.getElementById('gal-media-grid');
+  if (!grid) return;
+  if (!_galleryMedia.length) {
+    grid.innerHTML = '<div class="gal-media-empty">Henüz medya eklenmedi. Fotoğraf yükleyin veya video URL ekleyin.</div>';
+    return;
+  }
+  grid.innerHTML = _galleryMedia.map((m, idx) => `
+    <div class="gal-media-item" data-idx="${idx}">
+      ${m.type === 'video'
+        ? `<div class="gal-media-thumb gal-media-video-thumb">
+            <svg width="28" height="28" fill="white" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>`
+        : `<img class="gal-media-thumb" src="${escapeHtml(m.url)}" loading="lazy" />`}
+      <div class="gal-media-item-footer">
+        <span class="gal-media-type-badge">${m.type === 'video' ? '▶ Video' : '📷'}</span>
+        <div style="display:flex;gap:4px;margin-left:auto">
+          <button class="btn btn-ghost btn-sm" style="padding:2px 6px" onclick="galEditCaption(${idx})" title="Altyazı düzenle">✏️</button>
+          ${m.id ? `<button class="btn btn-ghost btn-sm" style="padding:2px 6px;color:var(--danger)" onclick="galDeleteMedia(${idx})" title="Sil">✕</button>` : ''}
+        </div>
+      </div>
+      ${m.caption ? `<div class="gal-media-caption">${escapeHtml(m.caption)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+async function saveGalleryAlbum(statusOverride, id) {
+  const title = document.getElementById('gal-title')?.value?.trim();
+  if (!title) return alert('Başlık zorunludur.');
+  let slug = document.getElementById('gal-slug')?.value?.trim() || blogSlugify(title);
+  const description = _galleryQuill ? _galleryQuill.root.innerHTML : '';
+  const status = statusOverride || document.getElementById('gal-status')?.value || 'draft';
+  const data = {
+    title, slug, description,
+    cover_image: document.getElementById('gal-cover-image')?.value?.trim() || '',
+    event_date: document.getElementById('gal-event-date')?.value || '',
+    location: document.getElementById('gal-location')?.value?.trim() || '',
+    status,
+    sort_order: parseInt(document.getElementById('gal-sort')?.value || '0'),
+  };
+
+  const url = id ? `/api/admin/gallery/${id}` : '/api/admin/gallery';
+  const r = await api(url, { method: id ? 'PUT' : 'POST', body: data });
+
+  const statusEl = document.getElementById('gal-save-status');
+  if (r.ok || r.id) {
+    const newId = id || r.id;
+    _galleryAlbumId = newId;
+
+    // Kayıt olmayan medyaları yükle
+    const unsaved = _galleryMedia.filter(m => !m.id);
+    for (const m of unsaved) {
+      const mr = await api(`/api/admin/gallery/${newId}/media`, { method: 'POST', body: { type: m.type, url: m.url, thumbnail: m.thumbnail||'', caption: m.caption||'', sort_order: m.sort_order||0 } });
+      if (mr.ok) m.id = mr.id;
+    }
+
+    if (statusEl) {
+      statusEl.textContent = status === 'published' ? '✅ Yayımlandı' : '✅ Taslak kaydedildi';
+      statusEl.className = 'blog-save-status ok';
+      setTimeout(() => { if (statusEl) { statusEl.textContent = ''; statusEl.className = 'blog-save-status'; } }, 3000);
+    }
+    if (!id && r.id) {
+      document.querySelectorAll('.blog-editor-topbar button').forEach(btn => {
+        const oc = btn.getAttribute('onclick') || '';
+        if (oc.includes('saveGalleryAlbum'))
+          btn.setAttribute('onclick', oc.replace(/saveGalleryAlbum\(('[\w]+'),(null|\d+)\)/, `saveGalleryAlbum($1,${r.id})`));
+      });
+    }
+  } else {
+    if (statusEl) {
+      statusEl.textContent = '❌ ' + (r.error || 'Kaydetme başarısız');
+      statusEl.className = 'blog-save-status err';
+    } else alert(r.error || 'Kaydetme başarısız');
+  }
+}
+
+async function galUploadPhotos(input) {
+  const files = [...input.files];
+  if (!files.length) return;
+  for (const file of files) {
+    const fd = new FormData(); fd.append('file', file);
+    const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }).then(res => res.json());
+    if (r.url) {
+      const newMedia = { type: 'photo', url: r.url, thumbnail: '', caption: '', sort_order: _galleryMedia.length };
+      _galleryMedia.push(newMedia);
+      if (_galleryAlbumId) {
+        const mr = await api(`/api/admin/gallery/${_galleryAlbumId}/media`, { method: 'POST', body: { type: 'photo', url: r.url, thumbnail: '', caption: '', sort_order: _galleryMedia.length - 1 } });
+        if (mr.ok) newMedia.id = mr.id;
+      }
+    }
+  }
+  galRenderMediaGrid();
+  input.value = '';
+}
+
+function galAddVideoModal() {
+  const url = prompt('Video URL\'sini girin (YouTube, Vimeo veya doğrudan video linki):');
+  if (!url?.trim()) return;
+  const newMedia = { type: 'video', url: url.trim(), thumbnail: '', caption: '', sort_order: _galleryMedia.length };
+  _galleryMedia.push(newMedia);
+  if (_galleryAlbumId) {
+    api(`/api/admin/gallery/${_galleryAlbumId}/media`, { method: 'POST', body: { type: 'video', url: url.trim(), thumbnail: '', caption: '', sort_order: _galleryMedia.length - 1 } })
+      .then(r => { if (r.ok) newMedia.id = r.id; });
+  }
+  galRenderMediaGrid();
+}
+
+function galEditCaption(idx) {
+  const m = _galleryMedia[idx];
+  const caption = prompt('Altyazı:', m.caption || '');
+  if (caption === null) return;
+  m.caption = caption;
+  if (m.id) api(`/api/admin/gallery/media/${m.id}`, { method: 'PUT', body: { type: m.type, url: m.url, thumbnail: m.thumbnail||'', caption, sort_order: m.sort_order||0 } });
+  galRenderMediaGrid();
+}
+
+async function galDeleteMedia(idx) {
+  const m = _galleryMedia[idx];
+  if (!confirm('Bu medyayı silmek istediğinize emin misiniz?')) return;
+  if (m.id) await api(`/api/admin/gallery/media/${m.id}`, { method: 'DELETE' });
+  _galleryMedia.splice(idx, 1);
+  galRenderMediaGrid();
+}
+
+function galUpdateCoverPreview() {
+  const url = document.getElementById('gal-cover-image')?.value?.trim();
+  const preview = document.getElementById('gal-cover-preview');
+  if (!preview) return;
+  preview.innerHTML = url ? `<img src="${escapeHtml(url)}" onerror="this.style.display='none'" />` : '<span>Görsel seçilmedi</span>';
+}
+
+async function galUploadCover(input) {
+  const file = input.files[0]; if (!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const r = await fetch('/api/admin/upload', { method: 'POST', body: fd }).then(res => res.json());
+  if (r.url) { const inp = document.getElementById('gal-cover-image'); if (inp) { inp.value = r.url; galUpdateCoverPreview(); } }
+}
+
+function galAutoSlug() {
+  const slugEl = document.getElementById('gal-slug');
+  if (!slugEl || slugEl.dataset.edited === '1') return;
+  slugEl.value = blogSlugify(document.getElementById('gal-title')?.value || '');
+}
+
+async function deleteGalleryAlbum(id, title) {
+  if (!confirm(`"${title}" albümünü ve tüm medyasını silmek istediğinize emin misiniz?\nBu işlem geri alınamaz.`)) return;
+  const r = await api(`/api/admin/gallery/${id}`, { method: 'DELETE' });
+  if (r.ok) switchSection('gallery');
   else alert(r.error || 'Silme başarısız');
 }
 

@@ -243,6 +243,31 @@ try { db.exec(`CREATE TABLE IF NOT EXISTS blog_posts (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`); } catch {}
 
+try { db.exec(`CREATE TABLE IF NOT EXISTS gallery_albums (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug TEXT UNIQUE,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  cover_image TEXT DEFAULT '',
+  event_date TEXT DEFAULT '',
+  location TEXT DEFAULT '',
+  status TEXT DEFAULT 'draft',
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`); } catch {}
+
+try { db.exec(`CREATE TABLE IF NOT EXISTS gallery_media (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  album_id INTEGER NOT NULL REFERENCES gallery_albums(id) ON DELETE CASCADE,
+  type TEXT DEFAULT 'photo',
+  url TEXT NOT NULL,
+  thumbnail TEXT DEFAULT '',
+  caption TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`); } catch {}
+
 ['Bağışçı:#2e7d32','Genel:#1565c0','Teknik:#e65100','Acil:#c41230'].forEach(s => {
   const [name, color] = s.split(':');
   try { db.prepare('INSERT OR IGNORE INTO msg_labels(name,color) VALUES(?,?)').run(name, color); } catch {}

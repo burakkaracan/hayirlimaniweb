@@ -998,6 +998,94 @@ app.delete('/api/admin/blog/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ---------- Gallery (public) ----------
+app.get('/api/gallery', (req, res) => {
+  const albums = db.prepare(
+    "SELECT id,slug,title,description,cover_image,event_date,location,created_at FROM gallery_albums WHERE status='published' ORDER BY sort_order DESC, created_at DESC"
+  ).all();
+  albums.forEach(a => {
+    a.media_count = db.prepare('SELECT COUNT(*) as c FROM gallery_media WHERE album_id=?').get(a.id)?.c || 0;
+  });
+  res.json(albums);
+});
+
+app.get('/api/gallery/:slug', (req, res) => {
+  const album = db.prepare("SELECT * FROM gallery_albums WHERE slug=? AND status='published'").get(req.params.slug);
+  if (!album) return res.status(404).json({ error: 'Bulunamadı' });
+  album.media = db.prepare('SELECT * FROM gallery_media WHERE album_id=? ORDER BY sort_order ASC, id ASC').all(album.id);
+  res.json(album);
+});
+
+// ---------- Gallery (admin) ----------
+app.get('/api/admin/gallery', requireAdmin, (_req, res) => {
+  const albums = db.prepare('SELECT id,slug,title,cover_image,event_date,location,status,sort_order,created_at FROM gallery_albums ORDER BY sort_order DESC, created_at DESC').all();
+  albums.forEach(a => {
+    a.media_count = db.prepare('SELECT COUNT(*) as c FROM gallery_media WHERE album_id=?').get(a.id)?.c || 0;
+  });
+  res.json(albums);
+});
+
+app.get('/api/admin/gallery/:id', requireAdmin, (req, res) => {
+  const album = db.prepare('SELECT * FROM gallery_albums WHERE id=?').get(req.params.id);
+  if (!album) return res.status(404).json({ error: 'Bulunamadı' });
+  album.media = db.prepare('SELECT * FROM gallery_media WHERE album_id=? ORDER BY sort_order ASC, id ASC').all(album.id);
+  res.json(album);
+});
+
+app.post('/api/admin/gallery', requireAdmin, (req, res) => {
+  const { title, slug, description, cover_image, event_date, location, status, sort_order } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: 'Başlık zorunlu' });
+  let s = (slug || title).toLowerCase()
+    .replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  let base = s, n = 2;
+  while (db.prepare('SELECT id FROM gallery_albums WHERE slug=?').get(s)) s = base + '-' + n++;
+  const r = db.prepare('INSERT INTO gallery_albums(slug,title,description,cover_image,event_date,location,status,sort_order) VALUES(?,?,?,?,?,?,?,?)')
+    .run(s, title.trim(), description||'', cover_image||'', event_date||'', location||'', status||'draft', sort_order||0);
+  res.json({ ok: true, id: r.lastInsertRowid, slug: s });
+});
+
+app.put('/api/admin/gallery/:id', requireAdmin, (req, res) => {
+  const { title, slug, description, cover_image, event_date, location, status, sort_order } = req.body;
+  db.prepare('UPDATE gallery_albums SET title=?,slug=?,description=?,cover_image=?,event_date=?,location=?,status=?,sort_order=?,updated_at=CURRENT_TIMESTAMP WHERE id=?')
+    .run(title||'', slug||'', description||'', cover_image||'', event_date||'', location||'', status||'draft', sort_order||0, req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/gallery/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM gallery_media WHERE album_id=?').run(req.params.id);
+  db.prepare('DELETE FROM gallery_albums WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/gallery/:id/media', requireAdmin, (req, res) => {
+  const { type, url, thumbnail, caption, sort_order } = req.body;
+  if (!url?.trim()) return res.status(400).json({ error: 'URL zorunlu' });
+  const r = db.prepare('INSERT INTO gallery_media(album_id,type,url,thumbnail,caption,sort_order) VALUES(?,?,?,?,?,?)')
+    .run(req.params.id, type||'photo', url.trim(), thumbnail||'', caption||'', sort_order||0);
+  res.json({ ok: true, id: r.lastInsertRowid });
+});
+
+app.put('/api/admin/gallery/media/:id', requireAdmin, (req, res) => {
+  const { type, url, thumbnail, caption, sort_order } = req.body;
+  db.prepare('UPDATE gallery_media SET type=?,url=?,thumbnail=?,caption=?,sort_order=? WHERE id=?')
+    .run(type||'photo', url||'', thumbnail||'', caption||'', sort_order||0, req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/api/admin/gallery/media/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM gallery_media WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/gallery/:id/media/reorder', requireAdmin, (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) return res.status(400).json({ error: 'order array zorunlu' });
+  const stmt = db.prepare('UPDATE gallery_media SET sort_order=? WHERE id=? AND album_id=?');
+  order.forEach((mediaId, i) => stmt.run(i, mediaId, req.params.id));
+  res.json({ ok: true });
+});
+
 // ---------- Fallback ----------
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/')) return next();
