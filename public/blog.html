@@ -9,94 +9,124 @@
   <link rel="icon" type="image/png" href="/images/icon.png">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    .blog-hero { background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%); padding: 56px 0 40px; color: #fff; }
-    .blog-hero h1 { font-size: 2.2rem; font-weight: 800; margin: 0 0 8px; }
-    .blog-hero p { font-size: 1rem; opacity: .82; margin: 0; }
-
-    .blog-cat-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 24px 0 8px; }
-    .blog-cat-btn {
-      padding: 7px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600;
-      border: 1.5px solid var(--border); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s;
+    /* --- Filter bar --- */
+    .blog-toolbar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 28px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 32px;
     }
-    .blog-cat-btn:hover, .blog-cat-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-
-    .blog-search-wrap { margin-left: auto; }
+    .blog-cat-bar { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+    .blog-cat-btn {
+      padding: 6px 16px; border-radius: 6px; font-size: .83rem; font-weight: 600;
+      border: 1.5px solid var(--border); background: #fff; color: var(--muted);
+      cursor: pointer; transition: all .15s; line-height: 1.4;
+    }
+    .blog-cat-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .blog-cat-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
     .blog-search-wrap input {
-      padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 8px;
-      font-size: .88rem; color: var(--text); background: #fff; width: 220px;
+      padding: 7px 14px 7px 36px; border: 1.5px solid var(--border); border-radius: 6px;
+      font-size: .85rem; color: var(--text); background: #fff; width: 210px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 10px center;
     }
     .blog-search-wrap input:focus { border-color: var(--brand); outline: none; }
 
+    /* --- Card grid --- */
     .blog-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px; padding: 32px 0 56px;
+      grid-template-columns: repeat(auto-fill, minmax(296px, 1fr));
+      gap: 24px; padding-bottom: 56px;
     }
-
     .blog-card {
-      background: #fff; border-radius: 14px; overflow: hidden;
-      box-shadow: 0 2px 12px rgba(0,0,0,.07); transition: transform .18s, box-shadow .18s;
-      display: flex; flex-direction: column; text-decoration: none;
+      background: #fff; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+      transition: box-shadow .18s, transform .18s;
+      display: flex; flex-direction: column; text-decoration: none; color: inherit;
     }
-    .blog-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,.12); }
-    .blog-card-cover {
-      width: 100%; height: 200px; object-fit: cover; display: block; background: var(--bg);
+    .blog-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-3px); }
+
+    .blog-card-cover { width: 100%; height: 188px; object-fit: cover; display: block; }
+    .blog-card-cover-ph {
+      width: 100%; height: 188px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
     }
-    .blog-card-cover-placeholder {
-      width: 100%; height: 200px; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); font-size: 2.8rem;
-    }
-    .blog-card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-    .blog-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .blog-card-cover-ph svg { opacity: .25; }
+
+    .blog-card-body { padding: 18px 20px 20px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+    .blog-card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px; }
     .blog-card-cat {
-      padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 600;
+      padding: 2px 9px; border-radius: 4px; font-size: .7rem; font-weight: 700;
       background: #e0f2fe; color: #0369a1; text-transform: uppercase; letter-spacing: .04em;
     }
     .blog-card-date { font-size: .75rem; color: var(--muted); margin-left: auto; }
-    .blog-card-title { font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.4; margin: 0; }
-    .blog-card-excerpt { font-size: .88rem; color: var(--muted); line-height: 1.6; flex: 1; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .blog-card-footer { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: .8rem; color: var(--muted); }
-    .blog-card-author { font-weight: 500; color: var(--text); }
-    .blog-card-readmore { margin-left: auto; color: var(--brand); font-weight: 600; font-size: .82rem; }
 
-    .blog-featured-badge {
-      position: absolute; top: 12px; right: 12px;
-      background: #fbbf24; color: #fff; padding: 3px 10px;
-      border-radius: 999px; font-size: .72rem; font-weight: 700;
+    .blog-card-title {
+      font-size: 1.05rem; font-weight: 700; color: var(--text);
+      line-height: 1.4; margin: 0;
     }
-    .blog-card-wrap { position: relative; }
+    .blog-card-excerpt {
+      font-size: .85rem; color: var(--muted); line-height: 1.65; flex: 1; margin: 0;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .blog-card-footer {
+      display: flex; align-items: center; gap: 6px; padding-top: 10px;
+      margin-top: auto; border-top: 1px solid var(--border);
+      font-size: .78rem; color: var(--muted);
+    }
+    .blog-card-author { font-weight: 500; color: var(--text-secondary, #444); }
+    .blog-card-readmore { margin-left: auto; color: var(--brand); font-weight: 600; }
 
-    .blog-empty { text-align: center; padding: 80px 20px; color: var(--muted); grid-column: 1/-1; }
-    .blog-empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
-    .blog-empty h3 { font-size: 1.25rem; margin-bottom: 8px; }
+    .blog-featured-strip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 12px; background: #fef9c3; font-size: .72rem; font-weight: 700;
+      color: #854d0e; border-bottom: 1px solid #fde68a;
+    }
+    .blog-featured-strip svg { flex-shrink: 0; }
 
-    .blog-pagination { display: flex; justify-content: center; gap: 8px; padding-bottom: 48px; }
-    .blog-page-btn { padding: 8px 16px; border-radius: 8px; font-size: .88rem; font-weight: 600; border: 1.5px solid var(--border); background: #fff; color: var(--muted); cursor: pointer; transition: all .15s; }
-    .blog-page-btn:hover, .blog-page-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-    .blog-page-btn:disabled { opacity: .4; cursor: default; }
+    /* --- Empty / loading --- */
+    .blog-empty {
+      grid-column: 1/-1; text-align: center; padding: 72px 20px 80px;
+      color: var(--muted);
+    }
+    .blog-empty svg { display: block; margin: 0 auto 20px; opacity: .35; }
+    .blog-empty h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .blog-empty p { font-size: .88rem; }
 
-    @media (max-width: 600px) {
-      .blog-hero h1 { font-size: 1.6rem; }
-      .blog-grid { grid-template-columns: 1fr; gap: 16px; }
-      .blog-cat-bar { gap: 6px; }
+    /* --- Pagination --- */
+    .blog-pagination {
+      display: flex; justify-content: center; gap: 6px; padding-bottom: 48px; flex-wrap: wrap;
+    }
+    .blog-page-btn {
+      padding: 7px 14px; border-radius: 6px; font-size: .83rem; font-weight: 600;
+      border: 1.5px solid var(--border); background: #fff; color: var(--muted);
+      cursor: pointer; transition: all .15s; line-height: 1.2;
+    }
+    .blog-page-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); }
+    .blog-page-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .blog-page-btn:disabled { opacity: .35; cursor: default; }
+
+    @media (max-width: 640px) {
+      .blog-grid { grid-template-columns: 1fr; gap: 14px; }
       .blog-search-wrap input { width: 100%; }
+      .blog-toolbar { flex-direction: column; align-items: stretch; }
     }
   </style>
 </head>
 <body>
   <header id="site-header"></header>
 
-  <section class="blog-hero">
+  <section class="page-hero">
     <div class="container">
-      <h1>📝 Blog</h1>
-      <p>Haberler, duyurular ve dünyadaki iyilik hikayeleri</p>
+      <h1>Blog</h1>
+      <div class="breadcrumb"><a href="/">Anasayfa</a> / Blog</div>
     </div>
   </section>
 
   <div class="container">
-    <div id="blog-filter-row" style="display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+    <div class="blog-toolbar">
       <div class="blog-cat-bar" id="blog-cat-bar">
-        <button class="blog-cat-btn active" data-cat="">Tümü</button>
+        <button class="blog-cat-btn active" data-cat="" onclick="setCat('',this)">Tümü</button>
       </div>
       <div class="blog-search-wrap">
         <input type="search" id="blog-search" placeholder="Yazı ara…" oninput="debouncedSearch()" />
@@ -104,7 +134,15 @@
     </div>
 
     <div class="blog-grid" id="blog-grid">
-      <div class="blog-empty"><div class="blog-empty-icon">⏳</div><h3>Yükleniyor…</h3></div>
+      <div class="blog-empty">
+        <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <h3>Yükleniyor…</h3>
+      </div>
     </div>
 
     <div class="blog-pagination" id="blog-pagination"></div>
@@ -155,68 +193,76 @@
     function renderBlog() {
       const posts = filteredPosts();
       const total = posts.length;
-      const pages = Math.ceil(total / PER_PAGE);
+      const pages = Math.ceil(total / PER_PAGE) || 1;
       if (_page > pages) _page = Math.max(1, pages);
       const slice = posts.slice((_page - 1) * PER_PAGE, _page * PER_PAGE);
       const grid = document.getElementById('blog-grid');
 
       if (!slice.length) {
-        grid.innerHTML = `<div class="blog-empty"><div class="blog-empty-icon">🔍</div><h3>${_search ? 'Aramanızla eşleşen yazı bulunamadı.' : 'Henüz blog yazısı yok.'}</h3></div>`;
+        const msg = _search ? 'Aramanızla eşleşen yazı bulunamadı.' : 'Henüz blog yazısı yayımlanmadı.';
+        grid.innerHTML = `
+          <div class="blog-empty">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <h3>${msg}</h3>
+            <p>Daha sonra tekrar kontrol edin.</p>
+          </div>`;
         document.getElementById('blog-pagination').innerHTML = '';
         return;
       }
 
       grid.innerHTML = slice.map(p => {
         const date = p.published_at
-          ? new Date(p.published_at).toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric' })
+          ? new Date(p.published_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
           : '';
-        const excerpt = p.excerpt || stripHtml(p.body || '').slice(0, 160);
-        const cover = p.cover_image
+        const excerpt = p.excerpt || stripHtml(p.body || '').slice(0, 150);
+        const coverHtml = p.cover_image
           ? `<img class="blog-card-cover" src="${escapeHtml(p.cover_image)}" alt="${escapeHtml(p.title)}" loading="lazy" />`
-          : `<div class="blog-card-cover-placeholder">📰</div>`;
+          : `<div class="blog-card-cover-ph">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </div>`;
+
         return `
-          <div class="blog-card-wrap">
-            ${p.featured ? '<span class="blog-featured-badge">⭐ Öne Çıkan</span>' : ''}
-            <a class="blog-card" href="/blog-yazi.html?slug=${encodeURIComponent(p.slug)}">
-              ${cover}
-              <div class="blog-card-body">
-                <div class="blog-card-meta">
-                  ${p.category ? `<span class="blog-card-cat">${escapeHtml(p.category)}</span>` : ''}
-                  ${date ? `<span class="blog-card-date">${date}</span>` : ''}
-                </div>
-                <h2 class="blog-card-title">${escapeHtml(p.title)}</h2>
-                ${excerpt ? `<p class="blog-card-excerpt">${escapeHtml(excerpt)}</p>` : ''}
-                <div class="blog-card-footer">
-                  ${p.author ? `<span class="blog-card-author">✍️ ${escapeHtml(p.author)}</span>` : ''}
-                  <span class="blog-card-readmore">Devam Oku →</span>
-                </div>
+          <a class="blog-card" href="/blog-yazi.html?slug=${encodeURIComponent(p.slug)}">
+            ${p.featured ? `<div class="blog-featured-strip">
+              <svg width="11" height="11" fill="currentColor" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Öne Çıkan
+            </div>` : ''}
+            ${coverHtml}
+            <div class="blog-card-body">
+              <div class="blog-card-meta">
+                ${p.category ? `<span class="blog-card-cat">${escapeHtml(p.category)}</span>` : ''}
+                ${date ? `<span class="blog-card-date">${date}</span>` : ''}
               </div>
-            </a>
-          </div>
-        `;
+              <h2 class="blog-card-title">${escapeHtml(p.title)}</h2>
+              ${excerpt ? `<p class="blog-card-excerpt">${escapeHtml(excerpt)}</p>` : ''}
+              <div class="blog-card-footer">
+                ${p.author ? `<span class="blog-card-author">${escapeHtml(p.author)}</span>` : ''}
+                <span class="blog-card-readmore">Devamını oku →</span>
+              </div>
+            </div>
+          </a>`;
       }).join('');
 
-      // Pagination
       const pag = document.getElementById('blog-pagination');
       if (pages <= 1) { pag.innerHTML = ''; return; }
-      let html = `<button class="blog-page-btn" onclick="goPage(${_page - 1})" ${_page === 1 ? 'disabled' : ''}>‹ Önceki</button>`;
-      for (let i = 1; i <= pages; i++) {
-        html += `<button class="blog-page-btn${i === _page ? ' active' : ''}" onclick="goPage(${i})">${i}</button>`;
-      }
-      html += `<button class="blog-page-btn" onclick="goPage(${_page + 1})" ${_page === pages ? 'disabled' : ''}>Sonraki ›</button>`;
+      let html = `<button class="blog-page-btn" onclick="goPage(${_page-1})" ${_page===1?'disabled':''}>← Önceki</button>`;
+      for (let i = 1; i <= pages; i++)
+        html += `<button class="blog-page-btn${i===_page?' active':''}" onclick="goPage(${i})">${i}</button>`;
+      html += `<button class="blog-page-btn" onclick="goPage(${_page+1})" ${_page===pages?'disabled':''}>Sonraki →</button>`;
       pag.innerHTML = html;
     }
 
-    function goPage(p) {
-      _page = p;
-      renderBlog();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    function goPage(p) { _page = p; renderBlog(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
     function stripHtml(html) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = html;
-      return tmp.textContent || '';
+      const d = document.createElement('div'); d.innerHTML = html; return d.textContent || '';
     }
 
     window.addEventListener('app-ready', async () => {
@@ -228,12 +274,10 @@
       cats.forEach(c => {
         const btn = document.createElement('button');
         btn.className = 'blog-cat-btn';
-        btn.dataset.cat = c;
         btn.textContent = c;
         btn.onclick = () => setCat(c, btn);
         bar.appendChild(btn);
       });
-      bar.querySelector('[data-cat=""]').onclick = function() { setCat('', this); };
 
       renderBlog();
     });
