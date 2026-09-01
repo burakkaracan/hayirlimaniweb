@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Hayır Limanı Derneği kurumsal web sitesi ve bağış platformu",
   "main": "server.js",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
@@ -13,7 +10,7 @@
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^11.3.0",
     "chart.js": "^4.5.1",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.0",
