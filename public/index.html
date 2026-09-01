@@ -312,20 +312,25 @@
     }
 
     const _S = (p) => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
-    const CAT_ICONS = {
-      'kurban':           _S('<ellipse cx="11" cy="13" rx="6" ry="4.5"/><circle cx="17" cy="9" r="2.5"/><line x1="7" y1="17" x2="6" y2="21"/><line x1="11" y1="17.5" x2="11" y2="21"/><line x1="15" y1="17" x2="16" y2="21"/><line x1="17" y1="11.5" x2="17" y2="17.5"/>'),
-      'su-kuyusu':        _S('<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'),
-      'kalici-eserler':   _S('<path d="M3 22h18"/><path d="M5 22V10l7-7 7 7v12"/><path d="M9 22v-5h6v5"/>'),
-      'zekat':            _S('<path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'),
-      'acil-yardim':      _S('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>'),
-      'egitim':           _S('<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'),
-      'yetim':            _S('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
-      'gida':             _S('<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
-      'insani-yardim':    _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
-      'gazze':            _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
-      'gazze-insani-yardim': _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
-      'gazze-yardimi':    _S('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'),
-    };
+    // Anahtar kelimeye göre eşleşme: admin panelinden kategori adı/slug'ı değişse
+    // veya Türkçe karakterler slug'ı bozsa bile (ör. "gazze-i-nsani-yardim") doğru ikon bulunur.
+    const CAT_ICON_RULES = [
+      ['kurban',            '<ellipse cx="11" cy="13" rx="6" ry="4.5"/><circle cx="17" cy="9" r="2.5"/><line x1="7" y1="17" x2="6" y2="21"/><line x1="11" y1="17.5" x2="11" y2="21"/><line x1="15" y1="17" x2="16" y2="21"/><line x1="17" y1="11.5" x2="17" y2="17.5"/>'],
+      ['kuyu',              '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>'],
+      ['kalici,eser',       '<path d="M3 22h18"/><path d="M5 22V10l7-7 7 7v12"/><path d="M9 22v-5h6v5"/>'],
+      ['zekat',             '<path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>'],
+      ['acil',              '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'],
+      ['egitim,eğitim',     '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'],
+      ['yetim',             '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'],
+      ['gida,gıda,kumanya,yemek,hijyen', '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'],
+      ['gazze,insani,i̇nsani,humaniter,yardim,yardım', '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>'],
+    ].map(([keys, path]) => ({ keys: keys.split(','), svg: _S(path) }));
+    const CAT_ICON_DEFAULT = _S('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>');
+    function catIcon(c) {
+      const hay = ((c.slug || '') + ' ' + (c.title || '')).toLowerCase();
+      const rule = CAT_ICON_RULES.find(r => r.keys.some(k => hay.includes(k)));
+      return rule ? rule.svg : CAT_ICON_DEFAULT;
+    }
     const CAT_DESCS = {
       'kurban':         'Kurban bağışlarınızı ihtiyaç sahiplerine ulaştırıyor, kesim ve dağıtımı sizin adınıza güvenle gerçekleştiriyoruz. Yurt içi ve yurt dışında vekâleten kurban kesilmektedir.',
       'su-kuyusu':      'Temiz suya erişimi olmayan bölgelere açtığımız her kuyu yüzlerce insanın hayatına dokunuyor. GPS koordinatları ve görselleriyle şeffaf takip sağlıyoruz.',
@@ -348,7 +353,7 @@
 
       document.getElementById('cat-tabs').innerHTML = _cats.map((c, i) => `
         <button class="cat-tab${i === 0 ? ' active' : ''}" onclick="selectCat(${i})">
-          <span class="cat-tab-icon">${CAT_ICONS[c.slug] || _S('<circle cx="12" cy="12" r="9"/>')}</span>
+          <span class="cat-tab-icon">${catIcon(c)}</span>
           <span class="cat-tab-title">${c.title}</span>
         </button>
       `).join('');
@@ -396,7 +401,7 @@
       const desc = (c.description && c.description.length > 40) ? c.description : (CAT_DESCS[c.slug] || c.description || '');
       const media = c.cover_image
         ? `<img class="cat-panel-img" src="${c.cover_image}" alt="${c.title}" loading="lazy" />`
-        : `<div class="cat-panel-placeholder">${CAT_ICONS[c.slug] || ''}</div>`;
+        : `<div class="cat-panel-placeholder">${catIcon(c)}</div>`;
       const subs = _allCats.filter(s => s.parent_id === c.id);
       const subcatHtml = subs.length ? `
         <div class="cat-subcat-wrap">
