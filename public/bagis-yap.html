@@ -122,7 +122,7 @@
         const subs = childrenOf(p.id);
         if (subs.length) {
           opts += `<optgroup label="${p.icon ? p.icon + ' ' : ''}${p.title}">`;
-          subs.forEach(s => { opts += `<option value="${s.id}" data-slug="${s.slug}" data-price="${s.price}" data-fixed="${s.fixed_price || 0}">${s.title}</option>`; });
+          subs.forEach(s => { opts += `<option value="${s.id}" data-slug="${s.slug}" data-parent-slug="${p.slug}" data-price="${s.price}" data-fixed="${s.fixed_price || 0}">${s.title}</option>`; });
           opts += '</optgroup>';
         } else {
           opts += `<option value="${p.id}" data-slug="${p.slug}" data-price="${p.price}" data-fixed="${p.fixed_price || 0}">${p.icon ? p.icon + ' ' : ''}${p.title}</option>`;
@@ -150,7 +150,9 @@
 
         // Kurban kategorisi vekalet kutusu + IBAN değişimi
         const slug = opt?.dataset?.slug || '';
-        const isKurban = slug.includes('kurban');
+        const parentSlug = opt?.dataset?.parentSlug || '';
+        const text = (opt?.textContent || '').toLowerCase();
+        const isKurban = slug.includes('kurban') || parentSlug.includes('kurban') || text.includes('kurban');
         document.getElementById('vekalet-wrap').classList.toggle('hidden', !isKurban);
         if (!isKurban) document.getElementById('vekalet-check').checked = false;
 
