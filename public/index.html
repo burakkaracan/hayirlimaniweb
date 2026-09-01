@@ -311,49 +311,42 @@
       }
     }
 
-    const _S = (p) => `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+    const _S = (p) => `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
     // Anahtar kelimeye göre eşleşme: admin panelinden kategori adı/slug'ı değişse
     // veya Türkçe karakterler slug'ı bozsa bile (ör. "gazze-i-nsani-yardim") doğru ikon bulunur.
-    // İkonlar çift renkli (duotone): ince çizgi + hafif dolgu vurgusu.
+    // İkonlar çift renkli (duotone): ince çizgi + belirgin dolgu vurgusu, sade ve büyük.
     const CAT_ICON_RULES = [
-      ['kurban', `<circle cx="12" cy="14" r="5" fill="currentColor" fill-opacity=".16"/>
-        <path d="M8.2 12.2c-2-1-3-3.3-2-5.4.7-1.5 2.5-2.3 3.9-1.5"/>
-        <path d="M15.8 12.2c2-1 3-3.3 2-5.4-.7-1.5-2.5-2.3-3.9-1.5"/>
-        <path d="M8.7 11.3c-1-.3-1.7.1-1.7 1s.9 1.5 1.9 1"/>
-        <path d="M15.3 11.3c1-.3 1.7.1 1.7 1s-.9 1.5-1.9 1"/>
-        <circle cx="10.2" cy="14.3" r=".4" fill="currentColor" stroke="none"/>
-        <circle cx="13.8" cy="14.3" r=".4" fill="currentColor" stroke="none"/>`],
-      ['kuyu', `<path d="M6 12V7.5M18 12V7.5"/>
-        <path d="M5 7.5h14"/>
-        <path d="M12 7.5V13"/>
-        <rect x="10.3" y="12" width="3.4" height="3" rx=".6" fill="currentColor" fill-opacity=".3"/>
-        <rect x="5" y="13" width="14" height="7.5" rx="2" fill="currentColor" fill-opacity=".12"/>`],
-      ['kalici,eser', `<path d="M12 2.3a2 2 0 1 0 1.3 3.5A2.4 2.4 0 0 1 12 2.3Z" fill="currentColor" stroke="none"/>
-        <path d="M4 21h16"/>
-        <path d="M6 21V10.5L12 6l6 4.5V21" fill="currentColor" fill-opacity=".1"/>
-        <path d="M10 21v-5h4v5"/>`],
+      ['kurban', `<circle cx="12" cy="14.5" r="5.2" fill="currentColor" fill-opacity=".16"/>
+        <path d="M7.6 12c-2.2-1.1-3.2-3.6-2-5.8"/>
+        <path d="M16.4 12c2.2-1.1 3.2-3.6 2-5.8"/>
+        <path d="M8.5 12.8c-1.1-.2-1.8.3-1.8 1.2s1 1.6 2 1"/>
+        <path d="M15.5 12.8c1.1-.2 1.8.3 1.8 1.2s-1 1.6-2 1"/>`],
+      ['kuyu', `<path d="M12 3c3 3.4 5 6.1 5 8.8a5 5 0 0 1-10 0C7 9.1 9 6.4 12 3Z" fill="currentColor" fill-opacity=".2"/>`],
+      ['kalici,eser', `<path d="M4 21h16"/>
+        <path d="M6 21V10.5L12 6l6 4.5V21" fill="currentColor" fill-opacity=".12"/>
+        <path d="M10 21v-5h4v5"/>
+        <path d="M12 6V3"/>`],
       ['zekat', `<path d="M18 11V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2"/>
         <path d="M14 10V4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v2"/>
         <path d="M10 10.5V6a2 2 0 0 0-2-2 2 2 0 0 0-2 2v8"/>
-        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
-        <circle cx="19" cy="4.6" r="2" fill="currentColor" fill-opacity=".18" stroke="none"/>`],
-      ['acil', `<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity=".14"/>
+        <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>`],
+      ['acil', `<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" fill="currentColor" fill-opacity=".16"/>
         <line x1="12" y1="9.5" x2="12" y2="13.5"/>
-        <circle cx="12" cy="16.5" r=".9" fill="currentColor" stroke="none"/>`],
-      ['egitim,eğitim', `<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" fill="currentColor" fill-opacity=".14"/>
+        <circle cx="12" cy="16.7" r="1" fill="currentColor" stroke="none"/>`],
+      ['egitim,eğitim', `<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" fill="currentColor" fill-opacity=".16"/>
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>`],
-      ['yetim', `<circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity=".18"/>
+      ['yetim', `<circle cx="9" cy="7" r="4" fill="currentColor" fill-opacity=".2"/>
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
         <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
         <path d="M16 3.13a4 4 0 0 1 0 7.75"/>`],
-      ['gida,gıda,kumanya,yemek,hijyen', `<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" fill="currentColor" fill-opacity=".12"/>
+      ['gida,gıda,kumanya,yemek,hijyen', `<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" fill="currentColor" fill-opacity=".14"/>
         <line x1="3" y1="6" x2="21" y2="6"/>
         <path d="M16 10a4 4 0 0 1-8 0"/>`],
-      ['gazze,insani,i̇nsani,humaniter,yardim,yardım', `<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity=".1"/>
+      ['gazze,insani,i̇nsani,humaniter,yardim,yardım', `<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" fill="currentColor" fill-opacity=".12"/>
         <path d="m3.3 7 8.7 5 8.7-5"/>
         <path d="M12 22V12"/>`],
     ].map(([keys, path]) => ({ keys: keys.split(','), svg: _S(path) }));
-    const CAT_ICON_DEFAULT = _S('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" fill="currentColor" fill-opacity=".18"/>');
+    const CAT_ICON_DEFAULT = _S('<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" fill="currentColor" fill-opacity=".2"/>');
     function catIcon(c) {
       const hay = ((c.slug || '') + ' ' + (c.title || '')).toLowerCase();
       const rule = CAT_ICON_RULES.find(r => r.keys.some(k => hay.includes(k)));
