@@ -3,6 +3,7 @@ data.sqlite-shm
 data.sqlite-wal
 mail.log
 server.log
+server_run.log
 uploads/
 .env
 .DS_Store

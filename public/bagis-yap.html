@@ -23,13 +23,13 @@
       <h1>🌿 Havale / EFT ile <span class="heading-accent">Bağış</span></h1>
       <p class="intro">Sanal pos sistemimiz yakında hizmetinize girecektir. Bu süreçte bağışlarınızı aşağıdaki IBAN numarasına yapabilirsiniz.</p>
 
-      <div class="iban-cur-tabs">
+      <div class="iban-cur-tabs" id="iban-cur-tabs">
         <button class="iban-cur-btn active" onclick="switchIban('tl',this)">₺ TL</button>
         <button class="iban-cur-btn" onclick="switchIban('eur',this)">€ EUR</button>
         <button class="iban-cur-btn" onclick="switchIban('usd',this)">$ USD</button>
       </div>
       <div class="iban-display">
-        <div class="label">Bağış IBAN</div>
+        <div class="label" id="iban-label">Bağış IBAN</div>
         <div class="value" id="iban-val">—</div>
         <div class="holder" id="iban-holder">—</div>
         <button class="btn btn-outline btn-sm" onclick="copyIban()"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> IBAN'ı Kopyala</button>
@@ -97,16 +97,19 @@
   <script src="/js/main.js"></script>
   <script>
     const _ibans = {};
+    let _lastCur = 'tl';
     function switchIban(cur, btn) {
+      _lastCur = cur;
       btn.parentElement.querySelectorAll('.iban-cur-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('iban-val').textContent = _ibans[cur] || '—';
     }
 
     window.addEventListener('app-ready', async () => {
-      _ibans.tl  = appSettings.iban     || '';
-      _ibans.eur = appSettings.iban_eur || '';
-      _ibans.usd = appSettings.iban_usd || '';
+      _ibans.tl     = appSettings.iban        || '';
+      _ibans.eur    = appSettings.iban_eur    || '';
+      _ibans.usd    = appSettings.iban_usd    || '';
+      _ibans.kurban = appSettings.iban_kurban || '';
       document.getElementById('iban-val').textContent = _ibans.tl;
       document.getElementById('iban-holder').textContent = appSettings.iban_holder || '';
 
@@ -145,11 +148,15 @@
           amtInput.title = '';
         }
 
-        // Kurban kategorisi vekalet kutusu
+        // Kurban kategorisi vekalet kutusu + IBAN değişimi
         const slug = opt?.dataset?.slug || '';
         const isKurban = slug.includes('kurban');
         document.getElementById('vekalet-wrap').classList.toggle('hidden', !isKurban);
         if (!isKurban) document.getElementById('vekalet-check').checked = false;
+
+        document.getElementById('iban-cur-tabs').classList.toggle('hidden', isKurban);
+        document.getElementById('iban-label').textContent = isKurban ? 'Kurban Bağış IBAN' : 'Bağış IBAN';
+        document.getElementById('iban-val').textContent = isKurban ? (_ibans.kurban || '—') : (_ibans[_lastCur] || '—');
       });
 
       const katParam = qs('kat');

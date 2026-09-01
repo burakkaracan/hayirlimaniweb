@@ -823,6 +823,7 @@ const sections = {
       ['iban', 'IBAN (₺ TL)'],
       ['iban_eur', 'IBAN (€ Euro)'],
       ['iban_usd', 'IBAN ($ Dolar)'],
+      ['iban_kurban', 'IBAN (Kurban)'],
       ['iban_holder', 'IBAN Sahibi'],
       ['tw', 'Twitter URL'],
       ['ig', 'Instagram URL'],

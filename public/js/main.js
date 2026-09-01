@@ -257,6 +257,18 @@ function copyFooterIban() {
   });
 }
 
+function copyFooterKurbanIban() {
+  const txt = document.getElementById('footer-iban-kurban-text')?.textContent?.trim();
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('iban-kurban-copy-btn');
+    if (!btn) return;
+    btn.classList.add('copied');
+    btn.innerHTML = svgIcon('check');
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = svgIcon('iban'); }, 2000);
+  });
+}
+
 function renderFooter() {
   const host = document.getElementById('site-footer');
   if (!host) return;
@@ -322,6 +334,12 @@ function renderFooter() {
             <div class="iban-row">
               <strong id="footer-iban-text">${s.iban || ''}</strong>
               <button id="iban-copy-btn" class="iban-copy-btn" onclick="copyFooterIban()" title="IBAN'ı Kopyala">${svgIcon('iban')}</button>
+            </div>
+            <div class="iban-holder">${s.iban_holder || ''}</div>
+            <small style="display:block;margin-top:10px;">Kurban Bağış IBAN</small>
+            <div class="iban-row">
+              <strong id="footer-iban-kurban-text">${s.iban_kurban || ''}</strong>
+              <button id="iban-kurban-copy-btn" class="iban-copy-btn" onclick="copyFooterKurbanIban()" title="IBAN'ı Kopyala">${svgIcon('iban')}</button>
             </div>
             <div class="iban-holder">${s.iban_holder || ''}</div>
           </div>
