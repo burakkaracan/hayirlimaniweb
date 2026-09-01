@@ -375,10 +375,20 @@ h3 { font-size: 1.25rem; }
 .cat-tab.active { background: rgba(196,18,48,.05); border-bottom-color: var(--accent); }
 .cat-tab-icon {
   display: flex; align-items: center; justify-content: center;
-  opacity: .4; transition: opacity .2s;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(26,61,92,.08);
   color: var(--brand);
+  transition: background .2s, color .2s, transform .2s;
 }
-.cat-tab.active .cat-tab-icon, .cat-tab:hover .cat-tab-icon { opacity: 1; }
+.cat-tab.active .cat-tab-icon, .cat-tab:hover .cat-tab-icon {
+  background: rgba(196,18,48,.12);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+@media (max-width: 640px) {
+  .cat-tab-icon { width: 46px; height: 46px; }
+}
 .cat-tab-title {
   font-family: var(--font);
   font-size: .75rem; font-weight: 500;
